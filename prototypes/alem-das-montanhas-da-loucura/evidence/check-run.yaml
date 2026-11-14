@@ -1,0 +1,103 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/157.0.0.0"
+time: "2026-11-14 18:12:14"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: pass
+    evidence:
+      - "evidence/play.png"
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/combate.png"
+    item: "Look: mesa escura de madeira e feltro; cartas desenhadas como as impressas (moldura por tipo, gema de raridade, custo, selo dourado ◆ de Aprimorada, arte de `img_ia`), fontes Cinzel e EB Garamond do `estilo.css`; mapa do Ato em pergaminho com os ícones de nó do `acessorios.html`; tabuleiro de cada investigador com trilha de PV, energia, condições e Poderes; inimigos como as cartas de criatura impressas, com a intenção por cima. Detalhe característico: o Dado do Presságio rolando no centro da mesa no início de cada rodada. Toda figura desenhada, sem emoji, sem círculos simples."
+  - id: L2
+    result: pass
+    evidence: "evidence/combate.png"
+    item: "References: o jogo de tabuleiro (fonte de todas as regras, textos e artes); Slay the Spire (só as convenções de tela: mão em leque embaixo, inimigos à direita com intenção visível, pilhas de compra e descarte com contagem, recompensa depois do combate, mapa subindo)."
+  - id: L3
+    result: pass
+    evidence: "evidence/combate.png"
+    item: "View: 2D · Camera: fixa, a mesa vista de cima para a fileira."
+  - id: F1
+    result: pass
+    evidence: "js/motor.js"
+    item: "Combate completo: Presságio, turnos, intenções, Bloqueio, condições, cálculo de dano por golpe, Status e Fichas"
+  - id: F2
+    result: pass
+    evidence: "js/cartas.js"
+    item: "Os 4 investigadores com todas as cartas (iniciais, comuns, incomuns, raras, versões aprimoradas) e as mecânicas de Glifos, Posturas, Necrose e Bisturis"
+  - id: F3
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "Os 44 inimigos com habilidades, comportamentos Dado, Sequência e Fixo, os 37 Encontros, Horrores, Desperto e Anciões"
+  - id: F4
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Mapas dos Atos I–III (A/B) gerados pela mesma semente do tabuleiro, e o Ato IV linear"
+  - id: F5
+    result: pass
+    evidence: "js/nos.js"
+    item: "Mistério (22 eventos), Acampamento, Depósito, Achado Arqueológico, Esteatitos"
+  - id: F6
+    result: pass
+    evidence: "js/itens.js"
+    item: "Artefatos (todos os baralhos), 18 Provisões, Incolores, Traumas"
+  - id: F7
+    result: pass
+    evidence: "js/ui.js"
+    item: "Níveis de Loucura e variantes opcionais; salvamento automático entre nós"
+  - id: F8
+    result: pass
+    evidence: "js/ui.js"
+    item: "Registro de partida (log de ações) para conferir as regras"
+  - id: M1
+    result: pass
+    evidence: "evidence/combate.png"
+    item: "Tela de título → escolher 2 dos 4 investigadores (sugestão do manual destacada: O Explorador + A Bióloga) e o mapa A ou B → o texto de abertura do Ato I → mapa em pergaminho, clicar num nó de Criatura da linha 1 → dois Encontros Fáceis, um por fileira; o dado rola e as intenções aparecem → jogar cartas do primeiro investigador, trocar para o segundo e encerrar → os inimigos agem em ordem, a partir da fileira do Olhar → vitória, Cantil de Aquavit, 2 créditos e 3 cartas de Recompensa para escolher ou recusar."
+  - id: C1
+    result: pass
+    evidence: "js/motor.js"
+    item: "Exatamente o do tabuleiro: Encontros Difíceis a partir do 4º combate do Ato, Horrores a partir da linha 5 (um Desperto), Ancião no topo."
+  - id: C2
+    result: pass
+    evidence: "js/combate.js"
+    item: "Derrota se qualquer investigador chegar a 0 PV."
+  - id: C3
+    result: pass
+    evidence: "js/ui.js"
+    item: "Nível de Loucura 0–10 e as variantes opcionais do Cap."
+  - id: C4
+    result: pass
+    evidence: "js/ui.js"
+    item: "14 escolhidos no início *(inferred (strong))*."
+measures:
+  - id: step-time
+    value: 2.900
+    unit: ms
+    by: browser
+    detail: "mean 0.006 ms, slowest 2.900 ms, 646 steps"

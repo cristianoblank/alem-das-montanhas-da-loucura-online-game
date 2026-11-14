@@ -1,0 +1,8 @@
+no navegador	the whole game runs in the browser from index.html (DOM)	evidence/play.png
+inspirado em slay the spire	genre layout: hand at the bottom, draw/discard piles with counts, enemies with visible intents, map climbing upward, card rewards after combat	evidence/play.png
+regras do jogo de tabuleiro e cartas que criei	engine reads material/dados.js copied from the board game; manual chapters 7-15 implemented in js/	evidence/play.png
+copia fiel e identica do manual e das cartas	cards, enemies and artifacts drawn with the board game's own comum.js/estilo.css and its 344 illustrations; maps from its own seeded generator; manual texts copied verbatim	evidence/play.png
+controle de dois investigadores	setup picks 2 of 4 investigators; one person controls both (Tab switches)	evidence/play.png
+siga o jogo que existe slay de spire para adaptar o conceito	screen conventions only (fan hand, intents, piles, rewards, node map); no name, art or UI copied	evidence/play.png
+deckbuilder de computador	card combat with energy, a fanned hand, draw/discard piles and a node map, on screen	evidence/combate.png
+deckbuilder cooperativo	two investigators in one shared combat, each with own row, deck and hand; ally cards target the other	evidence/combate.png

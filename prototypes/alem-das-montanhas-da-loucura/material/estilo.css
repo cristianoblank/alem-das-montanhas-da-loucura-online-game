@@ -1,0 +1,258 @@
+/* ALÉM DAS MONTANHAS DA LOUCURA — estilos compartilhados (tela + impressão) */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cinzel+Decorative:wght@700&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --tinta: #1d1a16;
+  --papel: #f3ead8;
+  --papel2: #e8dcc2;
+  --sepia: #6b5536;
+  --ouro: #a8812f;
+  --abismo: #12161c;
+  --verde: #2f5d3a;
+  --sangue: #8e2a1f;
+  --azul: #24496b;
+  --violeta: #5b3a7a;
+  --cinza: #5d5a55;
+  --titulo: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --deco: 'Cinzel Decorative', 'Cinzel', Georgia, serif;
+  --texto: 'EB Garamond', Garamond, Georgia, serif;
+  --fell: 'IM Fell English', 'EB Garamond', Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #d9d2c3;
+  color: var(--tinta);
+  font-family: var(--texto);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+
+@page { size: A4 portrait; margin: 0; }
+@page paisagem { size: A4 landscape; margin: 0; }
+
+.folha {
+  width: 210mm; height: 297mm; overflow: hidden;
+  margin: 8mm auto; background: white; position: relative;
+  page-break-after: always; break-after: page;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.folha.deitada { width: 297mm; height: 210mm; page: paisagem; }
+.folha:last-child { page-break-after: auto; break-after: auto; }
+@media print {
+  body { background: white; }
+  .folha { margin: 0; box-shadow: none; }
+  .so-tela { display: none !important; }
+}
+
+.rotulo-folha {
+  position: absolute; bottom: 7.5mm; left: 0; right: 0; text-align: center;
+  font: 7pt var(--titulo); letter-spacing: .15em; color: #8a8174;
+}
+/* crédito do criador em todas as folhas impressas */
+.folha::after {
+  content: "Além das Montanhas da Loucura · jogo criado e desenvolvido por Cristiano Piaia Blank · inspirado na obra de H. P. Lovecraft";
+  position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; z-index: 5;
+  font: italic 6.6pt var(--texto); letter-spacing: .04em; color: #8a8174; pointer-events: none;
+}
+.folha.capa-secao::after, .folha:has(.chefe-ficha)::after { color: #d8cdb8; }
+.folha.mapa::after { color: #e3d8c2; }
+.folha.tab::after { bottom: 1.8mm; color: #e3d8c2; }
+
+/* ---------------- grade de cartas ---------------- */
+.grade { position: absolute; display: grid; }
+.grade.poker { grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; left: 10.5mm; top: 12mm; }
+.grade.mini  { grid-template-columns: repeat(4, 44mm); grid-auto-rows: 63mm; left: 17mm; top: 14mm; }
+.grade.ficha { grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; left: 10.5mm; top: 12mm; }
+
+/* ---------------- carta de jogador ---------------- */
+.carta {
+  width: 63mm; height: 88mm; position: relative; overflow: hidden;
+  outline: .2mm dashed #b9b2a6; outline-offset: -.1mm;
+  padding: 2.2mm; background: var(--c1, #444);
+}
+.carta .moldura {
+  position: absolute; inset: 2.2mm; border-radius: 2.4mm;
+  background: linear-gradient(#f6eedd, #eadfc6);
+  border: .5mm solid rgba(0,0,0,.55);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.carta .topo {
+  display: flex; align-items: center; gap: 1.2mm;
+  padding: 1.3mm 1.6mm .8mm 1.4mm;
+  background: linear-gradient(var(--c1), color-mix(in srgb, var(--c1) 70%, black));
+  color: #fbf4e4; border-bottom: .4mm solid rgba(0,0,0,.6);
+}
+.carta .custo {
+  flex: none; width: 7.2mm; height: 7.2mm; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6d8, #d9b25a 45%, #7a5a1c);
+  border: .45mm solid #2b200d; color: #1b1308;
+  font: 900 12pt/6.6mm var(--titulo); text-align: center;
+}
+.carta .custo.traco { font-size: 9pt; }
+.carta .nome { font: 700 8.6pt/1.05 var(--titulo); letter-spacing: .02em; text-shadow: 0 .3mm .4mm rgba(0,0,0,.5); }
+.carta .tipo {
+  position: absolute; left: 1.2mm; top: 1.1mm; z-index: 2;
+  font: 700 5.4pt var(--titulo); letter-spacing: .18em; text-transform: uppercase;
+  color: #fbf4e4; background: rgba(15, 12, 10, .78); padding: .45mm 1.6mm .35mm; border-radius: 1mm;
+}
+.carta .arte {
+  position: relative; height: var(--arte-h, 50mm); margin: 1.4mm 1.8mm 0; border-radius: 1.5mm; overflow: hidden;
+  border: .35mm solid rgba(0,0,0,.55); background: var(--c2);
+}
+.carta .arte svg { width: 100%; height: 100%; display: block; }
+.carta.poder .arte { border-radius: 50% / 14%; }
+.carta.poder .tipo { left: 50%; transform: translateX(-50%); }
+.carta.ataque .arte { clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); border: none; }
+.carta .texto {
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: .8mm 2.6mm; font: 8.8pt/1.2 var(--texto); color: #17130f;
+}
+.carta .nota-apr { margin-top: 1mm; font: italic 7.8pt/1.15 var(--texto); color: #3a3026; }
+.up {
+  display: inline-block; margin-left: .5mm; padding: .1mm .8mm 0; border-radius: .9mm;
+  background: #2b2116; color: #f6d77a; font: 700 .8em/1.25 var(--texto); font-style: normal; vertical-align: .08em;
+}
+.up::before { content: "◆"; font-size: .75em; margin-right: .35mm; vertical-align: .1em; }
+.nota-apr .up::before { content: ""; margin: 0; }
+.custo { position: relative; }
+.custo-up {
+  position: absolute; right: -2.2mm; bottom: -1.3mm; padding: 0 .7mm; border-radius: .9mm;
+  background: #2b2116; color: #f6d77a; font: 700 6pt/1.35 var(--texto); border: .2mm solid #f6d77a;
+}
+.custo-up::before { content: "◆"; font-size: .7em; margin-right: .3mm; }
+.carta .rodape {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .5mm 1.8mm .9mm; font: 5.4pt var(--titulo); letter-spacing: .06em; color: #3f362b;
+}
+.carta .gema { width: 2.6mm; height: 2.6mm; border-radius: 50%; display: inline-block; border: .25mm solid #0006; vertical-align: -0.6mm; margin-right: .8mm; }
+.gema.C { background: #9a9a9a; } .gema.I { background: #3f7fbf; } .gema.R { background: #d4a72c; } .gema.N { background: #7b6a55; }
+b.kw { font-weight: 700; }
+b.num { font-weight: 700; }
+
+/* status e traumas */
+.carta.status .moldura { background: linear-gradient(#e6e1d8, #cfc8bb); }
+.carta.trauma .moldura { background: linear-gradient(#2a2430, #17131b); color: #e9e0f0; }
+.carta.trauma .texto { color: #efe6f5; }
+.leg-apr { color: #6b4f1d; }
+.carta.trauma .rodape { color: #a99bb8; }
+
+/* ---------------- carta mini (artefatos / elixires) ---------------- */
+.mini-carta {
+  width: 44mm; height: 63mm; padding: 1.8mm; background: var(--c1, #4a3b26);
+  outline: .2mm dashed #b9b2a6; outline-offset: -.1mm; position: relative;
+}
+.mini-carta .moldura {
+  position: absolute; inset: 1.8mm; border-radius: 2mm; border: .4mm solid #0008;
+  background: linear-gradient(#f6eedd, #e6d8bb); display: flex; flex-direction: column; overflow: hidden;
+}
+.mini-carta .nome { padding: 1.2mm 5.6mm .6mm; text-align: center; font: 700 7pt/1.05 var(--titulo); }
+.mini-carta .classe { text-align: center; font: 700 4.8pt var(--titulo); letter-spacing: .2em; color: var(--c1); text-transform: uppercase; }
+.mini-carta .arte { position: relative; height: 30mm; margin: 1mm 2mm; overflow: hidden; border-radius: 1mm; }
+.mini-carta .arte svg { width: 100%; height: 100%; }
+.mini-carta .texto { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: .5mm 2mm 3.2mm; font: 7.6pt/1.16 var(--texto); color: #17130f; }
+.mini-carta .preco { position: absolute; right: 2mm; bottom: 1.6mm; font: 700 5.5pt var(--titulo); color: #6d6253; }
+
+/* ---------------- carta de inimigo ---------------- */
+.inimigo {
+  width: 63mm; height: 88mm; position: relative; padding: 2.2mm;
+  background: #1b1a1f; outline: .2mm dashed #b9b2a6; outline-offset: -.1mm; color: var(--tinta);
+}
+.inimigo.elite { background: linear-gradient(135deg, #5a1414, #2a0b0b); }
+.inimigo.chefe { background: linear-gradient(135deg, #2c1a44, #0f0a18); }
+.inimigo .moldura {
+  position: absolute; inset: 2.2mm; border-radius: 2mm; overflow: hidden;
+  background: linear-gradient(#efe6d2, #ddd0b3); border: .4mm solid #000a;
+  display: flex; flex-direction: column;
+}
+.inimigo .cab {
+  display: flex; align-items: center; gap: 1.5mm; padding: 1.2mm 1.5mm;
+  background: linear-gradient(#2a2730, #121016); color: #f1e7d0;
+}
+.inimigo.elite .cab { background: linear-gradient(#6b1a1a, #320c0c); }
+.inimigo.chefe .cab { background: linear-gradient(#3c2560, #160e24); }
+.inimigo .cab .nome { flex: 1; font: 700 8pt/1.05 var(--titulo); }
+.inimigo .cab .cat { font: 700 4.6pt var(--titulo); letter-spacing: .18em; opacity: .8; display: block; margin-top: .4mm; }
+.pv {
+  flex: none; min-width: 9mm; height: 9mm; border-radius: 50%; padding: 0 .8mm;
+  background: radial-gradient(circle at 35% 30%, #f28a7a, #a3261a 55%, #4d0b06);
+  border: .4mm solid #120303; color: white; text-align: center;
+  font: 900 10.5pt/8.4mm var(--titulo); text-shadow: 0 .3mm .4mm #000;
+  position: relative;
+}
+.pv small { position: absolute; left: 50%; transform: translateX(-50%); bottom: -2.4mm; font: 700 4.2pt var(--titulo); color: #f1e7d0; white-space: nowrap; text-shadow: none; }
+.inimigo .arte { height: 24mm; margin: 1.2mm 1.5mm 0; border-radius: 1.2mm; overflow: hidden; position: relative; border: .3mm solid #0006; }
+.inimigo .arte svg { width: 100%; height: 100%; display: block; }
+.inimigo .hab { margin: 1.2mm 1.5mm 0; padding: .9mm 1.4mm; font: 7.2pt/1.18 var(--texto); background: rgba(0,0,0,.08); border-left: .7mm solid #6b1a1a; }
+.comp-rot { font: 700 4.8pt var(--titulo); letter-spacing: .15em; color: #6d6253; text-align: center; margin: 1mm 0 .3mm; text-transform: uppercase; }
+.acoes { margin: 0 1.5mm; border-collapse: collapse; width: calc(100% - 3mm); }
+.acoes td { border-top: .2mm solid #0003; padding: .9mm .6mm; font: 8pt/1.2 var(--texto); vertical-align: middle; }
+.acoes td.rot { width: 10mm; text-align: center; font: 700 6.8pt var(--titulo); white-space: nowrap; }
+.dado-rot { display: inline-block; min-width: 7.5mm; padding: .3mm .6mm; border-radius: 1mm; background: #f9f4e8; border: .3mm solid #000a; }
+.inimigo .flavor { margin-top: auto; padding: .8mm 2mm 1.2mm; font: italic 6.8pt/1.15 var(--fell); color: #5d5143; text-align: center; }
+
+.ic { display: inline-flex; align-items: center; gap: .4mm; font-weight: 700; white-space: nowrap; font-size: 1.12em; line-height: 1; }
+.ic svg { width: 4.2mm; height: 4.2mm; vertical-align: middle; }
+/* selo de recompensa (canto superior esquerdo da arte, como no Slay the Spire de tabuleiro) */
+.premio { position: absolute; top: .7mm; left: .7mm; z-index: 2; display: flex; align-items: center; gap: .45mm;
+  padding: .45mm .7mm; background: rgba(14, 11, 8, .78); border: .25mm solid #c9a24a; border-radius: 1.1mm; }
+.premio .pr { display: inline-flex; align-items: center; }
+.premio svg { width: 4.3mm; height: 4.3mm; display: block; }
+.premio small { font: 700 4.6pt var(--titulo); color: #efd9a0; margin-left: .2mm; letter-spacing: .02em; white-space: nowrap; }
+/* no cabeçalho da carta: fora da arte, no canto superior esquerdo; o nome vem ao lado, um pouco menor */
+.inimigo .cab .premio { position: static; flex: none; gap: .3mm; padding: .35mm .5mm; margin-left: -.6mm; border-radius: .9mm; }
+.inimigo .cab .premio svg { width: 3.6mm; height: 3.6mm; }
+.inimigo .cab .premio small { font-size: 4.2pt; }
+.inimigo .cab:has(.premio) { gap: 1.1mm; padding-left: 1.2mm; }
+.inimigo .cab:has(.premio) .nome { font-size: 6.9pt; }
+.inimigo.elite .cab .nome { font-size: 6.6pt; }
+.inimigo.elite .cab .pv { top: -1mm; }  /* «POR JOGADOR» não encosta na arte */
+.inimigo .cab:has(.premio) .cat { font-size: 4.2pt; letter-spacing: .12em; }
+.chefe-ficha .topo { display: flex; align-items: center; gap: 2.5mm; }
+.chefe-ficha .topo .premio { position: static; flex: none; gap: .7mm; padding: .7mm 1mm; border-radius: 1.4mm; }
+.chefe-ficha .topo .premio svg { width: 6mm; height: 6mm; }
+.chefe-ficha .topo .premio small { font-size: 6.5pt; }
+.mini-carta .premio { top: 1mm; left: 1mm; padding: .35mm; border-radius: 50%; }
+.mini-carta .premio svg { width: 4mm; height: 4mm; }
+.mini-carta .preco .simb svg { width: 3.4mm; height: 3.4mm; }
+.premio.solto { position: static; display: inline-flex; vertical-align: middle; }
+.simb { display: inline-flex; align-items: center; gap: .3mm; vertical-align: middle; white-space: nowrap; }
+.simb svg { width: 4.4mm; height: 4.4mm; display: inline-block; vertical-align: middle; }
+.ic.todos::after { content: 'todos'; font: 700 4.5pt var(--titulo); letter-spacing: .05em; margin-left: .5mm; color: #7a1d12; text-transform: uppercase; }
+
+/* ---------------- chefe (meia folha A5 deitada) ---------------- */
+.chefe-ficha {
+  width: 210mm; height: 148.5mm; position: relative; padding: 5mm;
+  background: linear-gradient(135deg, #2c1a44, #0f0a18); border-bottom: .3mm dashed #999;
+}
+.chefe-ficha .moldura {
+  height: 100%; border-radius: 3mm; background: linear-gradient(#efe6d2, #dccdb0);
+  border: .6mm solid #000; display: grid; grid-template-columns: 70mm 1fr; overflow: hidden;
+}
+.chefe-ficha .lado { background: #17111f; color: #efe3cf; display: flex; flex-direction: column; }
+.chefe-ficha .lado .arte { flex: 1; }
+.chefe-ficha .lado .arte svg { width: 100%; height: 100%; display: block; }
+.chefe-ficha .lado .pvbox { padding: 3mm; display: flex; align-items: center; gap: 3mm; font: 700 9pt var(--titulo); }
+.chefe-ficha .lado .pv { width: 16mm; height: 16mm; min-width: 16mm; font-size: 17pt; line-height: 15mm; }
+.chefe-ficha .corpo { padding: 4mm 5mm; display: flex; flex-direction: column; gap: 2mm; }
+.chefe-ficha h2 { margin: 0; font: 900 17pt/1.05 var(--titulo); }
+.chefe-ficha .sub { font: 700 7pt var(--titulo); letter-spacing: .25em; color: #6b1a1a; }
+.chefe-ficha .hab { font: 10.5pt/1.3 var(--texto); padding: 1.5mm 2.5mm; background: rgba(0,0,0,.07); border-left: 1mm solid #3c2560; }
+.chefe-ficha .acoes td { font-size: 11pt; padding: 2mm 1.5mm; }
+.chefe-ficha .acoes td.rot { width: 20mm; font-size: 9.5pt; }
+.chefe-ficha .ic svg { width: 5mm; height: 5mm; }
+.chefe-ficha .flavor { margin-top: auto; font: italic 10pt var(--fell); color: #5d5143; }
+
+/* ---------------- versos ---------------- */
+.verso {
+  width: 63mm; height: 88mm; position: relative; overflow: hidden;
+  outline: .2mm dashed #b9b2a6; outline-offset: -.1mm;
+  background: var(--c1, #222);
+}
+.verso svg { width: 100%; height: 100%; display: block; }
+.mini-verso { width: 44mm; height: 63mm; }
+
+/* ilustrações em domínio público */
+.arte .foto { filter: sepia(.18) saturate(.88) contrast(1.06); }
+.chefe-ficha .lado .arte { position: relative; overflow: hidden; }
+.chefe-ficha .lado .arte .foto { position: absolute; inset: 0; }

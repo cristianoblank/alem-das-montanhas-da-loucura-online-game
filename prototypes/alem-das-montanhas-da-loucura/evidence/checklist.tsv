@@ -1,0 +1,16 @@
+L1	pass	evidence/combate.png	dark felt table, printed cards via the board game's cartaHTML/inimigoHTML with type frames, rarity gems, cost and gold upgrade seal (js/ui.js:62), parchment map with acessorios.html icons (evidence/play.png), investigator boards with HP, energy, conditions, powers; Omen die between boards and rows
+L2	pass	evidence/combate.png	fanned hand at bottom, enemies to the right with intents, draw/discard/banished piles with counts, rewards after combat, map climbing up; all rules/text/art from the board game
+L3	pass	evidence/combate.png	fixed 2D table view
+F1	pass	js/motor.js	(js/motor.js line 286) five-phase round, Omen die, intents (js/combate.js revelarIntencao), per-hit damage js/combate.js:181, block, all conditions, Status and Fichas; played in browser
+F2	pass	js/cartas.js	(js/cartas.js line 1) 199 card names, 0 without an effect (coverage run); glyphs js/combate.js:370, stances js/combate.js:352, Necrose and Bisturis; upgraded values via v(a,b)
+F3	pass	evidence/figures.png	44 enemies + 2 summoned, abilities in js/combate.js, Dado/Sequência/Fixo, 37 encounters js/motor.js:209, Desperto js/motor.js:256, bosses; all action texts parsed
+F4	pass	evidence/play.png	maps from the board game's own gerarMapa(seed) (material/mapa.js), A/B per act chosen at setup, linear Act IV (js/motor.js:147)
+F5	pass	js/nos.js	(js/nos.js line 15) 22 events js/nos.js:152, Acampamento js/nos.js:60, Depósito js/nos.js:99, Achado js/nos.js:128, three Esteatitos; traversed Acts I-IV in the browser
+F6	pass	js/itens.js	(js/itens.js line 16) all artifact decks (initial, common/uncommon/rare, boss, depot), 18 provisions js/itens.js:52, colourless cards, traumas
+F7	pass	js/ui.js	(js/ui.js line 153) Madness 0-10 and the 6 optional variants at setup; autosave to localStorage between nodes js/ui.js:51 (check row: saved localstorage)
+F8	pass	js/ui.js	(js/ui.js line 405) Registro panel lists every action, die roll and enemy move
+M1	pass	evidence/combate.png	title, setup with Explorador+Bióloga preselected and map A/B, Act I opening text, parchment map, two easy encounters one per row, die and intents, Tab switches investigator, enemies act from the Gaze row, reward with Cantil, 2 credits and 3 cards (played in browser)
+C1	pass	js/motor.js	(js/motor.js line 211) hard encounters from the 4th combat of the act; elites from row 5 with one Desperto (board game generator); Ancião at the top
+C2	pass	js/combate.js	(js/combate.js line 289) any investigator at 0 HP ends the expedition (defeat seen in browser)
+C3	pass	js/ui.js	(js/ui.js line 153) Madness 0-10 selector and Cap. 14 variants
+C4	pass	js/ui.js	(js/ui.js line 153) chosen at setup before the expedition starts

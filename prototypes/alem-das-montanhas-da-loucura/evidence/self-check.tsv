@@ -1,0 +1,111 @@
+time	2026-11-14 18:12:14
+keep	lines	0	pinned	0
+briefword	deckbuilder de computador	shown	evidence/combate.png
+briefword	deckbuilder cooperativo	shown	evidence/combate.png
+checklist	L1	pass	evidence/combate.png	Look: mesa escura de madeira e feltro; cartas desenhadas como as impressas (moldura por tipo, gema de raridade, custo, selo dourado ◆ de Aprimorada, arte de `img_ia`), fontes Cinzel e EB Garamond do `estilo.css`; mapa do Ato em pergaminho com os ícones de nó do `acessorios.html`; tabuleiro de cada investigador com trilha de PV, energia, condições e Poderes; inimigos como as cartas de criatura impressas, com a intenção por cima. Detalhe característico: o Dado do Presságio rolando no centro da mesa no início de cada rodada. Toda figura desenhada, sem emoji, sem círculos simples.	dark felt table, printed cards via the board game's cartaHTML/inimigoHTML with type frames, rarity gems, cost and gold upgrade seal (js/ui.js:62), parchment map with acessorios.html icons (evidence/play.png), investigator boards with HP, energy, conditions, powers; Omen die between boards and rows
+checklist	L2	pass	evidence/combate.png	References: o jogo de tabuleiro (fonte de todas as regras, textos e artes); Slay the Spire (só as convenções de tela: mão em leque embaixo, inimigos à direita com intenção visível, pilhas de compra e descarte com contagem, recompensa depois do combate, mapa subindo).	fanned hand at bottom, enemies to the right with intents, draw/discard/banished piles with counts, rewards after combat, map climbing up; all rules/text/art from the board game
+checklist	L3	pass	evidence/combate.png	View: 2D · Camera: fixa, a mesa vista de cima para a fileira.	fixed 2D table view
+checklist	F1	noevidence	js/motor.js:286	Combate completo: Presságio, turnos, intenções, Bloqueio, condições, cálculo de dano por golpe, Status e Fichas	five-phase round, Omen die, intents (js/combate.js revelarIntencao), per-hit damage js/combate.js:181, block, all conditions, Status and Fichas; played in browser
+checklist	F2	noevidence	js/cartas.js:1	Os 4 investigadores com todas as cartas (iniciais, comuns, incomuns, raras, versões aprimoradas) e as mecânicas de Glifos, Posturas, Necrose e Bisturis	199 card names, 0 without an effect (coverage run); glyphs js/combate.js:370, stances js/combate.js:352, Necrose and Bisturis; upgraded values via v(a,b)
+checklist	F3	pass	evidence/figures.png	Os 44 inimigos com habilidades, comportamentos Dado, Sequência e Fixo, os 37 Encontros, Horrores, Desperto e Anciões	44 enemies + 2 summoned, abilities in js/combate.js, Dado/Sequência/Fixo, 37 encounters js/motor.js:209, Desperto js/motor.js:256, bosses; all action texts parsed
+checklist	F4	pass	evidence/play.png	Mapas dos Atos I–III (A/B) gerados pela mesma semente do tabuleiro, e o Ato IV linear	maps from the board game's own gerarMapa(seed) (material/mapa.js), A/B per act chosen at setup, linear Act IV (js/motor.js:147)
+checklist	F5	noevidence	js/nos.js:15	Mistério (22 eventos), Acampamento, Depósito, Achado Arqueológico, Esteatitos	22 events js/nos.js:152, Acampamento js/nos.js:60, Depósito js/nos.js:99, Achado js/nos.js:128, three Esteatitos; traversed Acts I-IV in the browser
+checklist	F6	noevidence	js/itens.js:16	Artefatos (todos os baralhos), 18 Provisões, Incolores, Traumas	all artifact decks (initial, common/uncommon/rare, boss, depot), 18 provisions js/itens.js:52, colourless cards, traumas
+checklist	F7	noevidence	js/ui.js:153	Níveis de Loucura e variantes opcionais; salvamento automático entre nós	Madness 0-10 and the 6 optional variants at setup; autosave to localStorage between nodes js/ui.js:51 (check row: saved localstorage)
+checklist	F8	noevidence	js/ui.js:405	Registro de partida (log de ações) para conferir as regras	Registro panel lists every action, die roll and enemy move
+checklist	M1	pass	evidence/combate.png	Tela de título → escolher 2 dos 4 investigadores (sugestão do manual destacada: O Explorador + A Bióloga) e o mapa A ou B → o texto de abertura do Ato I → mapa em pergaminho, clicar num nó de Criatura da linha 1 → dois Encontros Fáceis, um por fileira; o dado rola e as intenções aparecem → jogar cartas do primeiro investigador, trocar para o segundo e encerrar → os inimigos agem em ordem, a partir da fileira do Olhar → vitória, Cantil de Aquavit, 2 créditos e 3 cartas de Recompensa para escolher ou recusar.	title, setup with Explorador+Bióloga preselected and map A/B, Act I opening text, parchment map, two easy encounters one per row, die and intents, Tab switches investigator, enemies act from the Gaze row, reward with Cantil, 2 credits and 3 cards (played in browser)
+checklist	C1	noevidence	js/motor.js:211	Exatamente o do tabuleiro: Encontros Difíceis a partir do 4º combate do Ato, Horrores a partir da linha 5 (um Desperto), Ancião no topo.	hard encounters from the 4th combat of the act; elites from row 5 with one Desperto (board game generator); Ancião at the top
+checklist	C2	noevidence	js/combate.js:289	Derrota se qualquer investigador chegar a 0 PV.	any investigator at 0 HP ends the expedition (defeat seen in browser)
+checklist	C3	noevidence	js/ui.js:153	Nível de Loucura 0–10 e as variantes opcionais do Cap.	Madness 0-10 selector and Cap. 14 variants
+checklist	C4	noevidence	js/ui.js:153	14 escolhidos no início *(inferred (strong))*.	chosen at setup before the expedition starts
+browser	HeadlessChrome/157.0.0.0
+scene	play	0	title
+scene	play	41	play
+measure	step-time	play	0.006	2.900	646
+lane	play	stop	10.8	201
+saved	play	646	localstorage	amdl-save
+uncaught	play	0
+text	play	html	13,16,146,34	13.5	8.81	inside	Investigadores
+text	play	html	85,59,211,81	21.0	13.83	inside	O Explorador
+text	play	html	85,82,101,99	21.0	13.83	inside	PV
+text	play	html	104,82,118,99	21.0	13.83	inside	12
+text	play	html	166,82,173,99	21.0	13.83	inside	3
+text	play	html	31,150,41,163	21.0	3.60	inside	—
+text	play	html	57,150,66,163	21.0	3.60	inside	—
+text	play	html	34,174,111,189	13.5	14.62	inside	Baralho (10)
+text	play	html	85,232,173,254	21.0	13.83	inside	A Bióloga
+text	play	html	85,254,101,272	21.0	13.83	inside	PV
+text	play	html	104,254,118,272	21.0	13.83	inside	10
+text	play	html	166,254,173,272	21.0	13.83	inside	3
+text	play	html	31,322,41,336	21.0	3.60	inside	—
+text	play	html	57,322,66,336	21.0	3.60	inside	—
+text	play	html	34,347,111,362	13.5	14.62	inside	Baralho (10)
+text	play	html	596,38,652,64	13.5	15.92	inside	Ato I
+text	play	html	540,63,708,76	13.5	15.92	inside	A TRAVESSIA · MAPA A
+text	play	html	657,100,696,112	13.5	15.92	inside	ANCIÃO
+text	play	html	657,111,720,121	13.5	15.92	inside	Os Espécimes de Lake
+text	play	html	408,624,410,633	13.5	10.24	inside	1
+text	play	html	407,581,411,590	13.5	10.24	inside	2
+text	play	html	407,538,411,547	13.5	10.24	inside	3
+text	play	html	407,495,411,504	13.5	10.24	inside	4
+text	play	html	407,452,411,462	13.5	10.24	inside	5
+text	play	html	407,409,411,419	13.5	10.24	inside	6
+text	play	html	407,366,411,376	13.5	10.24	inside	7
+text	play	html	407,323,411,333	13.5	10.24	inside	8
+text	play	html	407,280,411,290	13.5	10.24	inside	9
+text	play	html	405,237,413,247	13.5	10.24	inside	10
+text	play	html	407,194,411,204	13.5	10.24	inside	11
+text	play	html	406,151,412,161	13.5	10.24	inside	12
+text	play	html	499,404,508,427	13.5	15.92	inside	?
+text	play	html	676,485,685,508	13.5	15.92	inside	?
+text	play	html	680,321,688,344	13.5	15.92	inside	?
+text	play	html	736,233,741,247	13.5	15.92	inside	¤
+text	play	html	792,184,801,207	13.5	15.92	inside	?
+text	play	html	564,318,572,342	13.5	15.92	inside	?
+text	play	html	562,533,570,556	13.5	15.92	inside	?
+text	play	html	562,232,567,246	13.5	15.92	inside	¤
+text	play	html	497,536,505,559	13.5	15.92	inside	?
+text	play	html	611,306,647,314	13.5	15.92	inside	DESPERTO
+text	play	html	514,654,734,667	13.5	15.92	inside	▲ INÍCIO — ESCOLHA UM NÓ DA LINHA 1 ▲
+text	play	html	439,681,474,690	13.5	15.92	inside	Criatura
+text	play	html	505,681,536,690	13.5	15.92	inside	Horror
+text	play	html	558,678,563,692	13.5	15.92	inside	?
+text	play	html	571,681,604,690	13.5	15.92	inside	Mistério
+text	play	html	637,681,692,690	13.5	15.92	inside	Acampamento
+text	play	html	691,681,694,689	13.5	15.92	inside	¤
+text	play	html	703,681,738,690	13.5	15.92	inside	Depósito
+text	play	html	769,681,800,690	13.5	15.92	inside	Achado
+text	play	html	40,664,336,699	16.5	16.92	inside	Escolham um nó da linha 1 · clique num nó brilhante (setas +
+text	play	html	875,16,999,34	16.5	8.81	inside	Ancião do Ato
+text	play	html	885,50,963,59	12.0	16.07	inside	Os Espécimes de Lake
+text	play	html	885,59,945,64	6.0	10.33	inside	ATO I · ANCIÃO · CHEFE
+text	play	html	998,51,1009,63	15.0	19.76	inside	28
+text	play	html	990,69,1018,73	6.0	16.07	inside	POR JOGADOR
+text	play	html	889,135,912,143	15.0	1.21	inside	Colônia:
+text	play	html	889,135,1008,164	15.0	1.21	inside	o Espécime-Líder começa acompanhado de um Espécime Menor (PV
+text	play	html	923,168,975,173	6.0	3.31	inside	Dado do Presságio
+text	play	html	892,181,900,188	9.0	15.79	inside	1-2
+text	play	html	910,176,968,185	15.0	1.14	inside	Linguagem Assobiada:
+text	play	html	910,176,1001,193	15.0	1.14	inside	cada jogador coloca 1
+text	play	html	931,184,963,193	15.0	1.14	inside	Atordoado
+text	play	html	892,199,901,207	9.0	15.79	inside	3-4
+text	play	html	920,197,924,207	16.5	1.14	inside	3
+text	play	html	892,216,901,223	9.0	15.79	inside	5-6
+text	play	html	920,213,924,223	16.5	1.14	inside	2
+text	play	html	941,217,945,226	15.0	1.14	inside	·
+text	play	html	945,217,975,226	15.0	1.14	inside	Debilitado
+text	play	html	897,230,1002,237	13.5	2.56	inside	Os seis montes estrelados estavam abertos por dentro.
+text	play	html	875,251,967,268	13.5	8.81	inside	Esteatitos
+text	play	html	875,311,934,324	13.5	15.92	inside	Acampamento
+text	play	html	945,311,982,324	13.5	15.92	inside	Guardião
+text	play	html	995,311,1026,324	13.5	15.92	inside	Achado
+text	play	html	875,333,1026,350	13.5	12.55	inside	Loucura 0 · combates no Ato: 0
+text	play	html	884,362,1007,376	13.5	16.83	inside	Registro da partida
+text	play	html	1027,362,1119,376	13.5	16.83	inside	Regras rápidas
+screen	play	drawn
+shot	play	prototypes/alem-das-montanhas-da-loucura/evidence/play.png
+responds	changed	116
+overlap	play	Acampamento	¤
+overlap	play	Colônia:	o Espécime-Líder começa acompanhado de um Espécime Menor (PV
+overlap	play	Linguagem Assobiada:	cada jogador coloca 1
+overlap	play	cada jogador coloca 1	Atordoado
