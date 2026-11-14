@@ -16,6 +16,6 @@ window.CONFIG = {
   descanso: { value: 3, min: 0, max: 10, step: 1 },         // PV recuperados ao Descansar (Loucura 6: 2)
   // --- tela ---
   pausaAnim: { value: 8, min: 0, max: 30, step: 1 },        // passos (1/60 s) entre efeitos resolvidos em ordem
-  escalaMao: { value: 0.62, min: 0.4, max: 1, step: 0.02 }, // tamanho das cartas na mão
-  escalaInimigo: { value: 0.66, min: 0.4, max: 1, step: 0.02 } // tamanho das cartas de inimigo na mesa
+  escalaMao: { value: 0.82, min: 0.4, max: 1, step: 0.02 }, // tamanho das cartas na mão
+  escalaInimigo: { value: 0.85, min: 0.4, max: 1, step: 0.02 } // tamanho das cartas de inimigo na mesa
 };

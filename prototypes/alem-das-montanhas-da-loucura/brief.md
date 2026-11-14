@@ -5,6 +5,8 @@ um jogo no navegador inicialmente para 1 player inspirado em slay the spire, com
 
 Respostas: quero tudo copia fiel e identica do manual e das cartas e tudo que tem na versao de tabuleiro, porque o jogo será justamente para testar a versao de tabuleiro se funciona. como será apenas 1 jogador a primeira versão, seguindo o manual terá o controle de dois investigadores. siga o jogo que existe slay de spire para adaptar o conceito do jogo de cartas a um jogo de computador
 
+After play: joguei, as cartas estão pequenas demais para ler poderia aumentar um pouco
+
 **Pitch:** O jogo de tabuleiro *Além das Montanhas da Loucura* inteiro, regra por regra e carta por carta, jogado no navegador por uma pessoa que comanda dois investigadores, com a tela organizada como um roguelike deckbuilder de computador.
 
 **Genre:** roguelike deckbuilder cooperativo (versão digital fiel de um jogo de tabuleiro)

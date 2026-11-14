@@ -234,27 +234,35 @@ function telaCombate() {
   const tabs = s.jogadores.map((j, i) => j.c ? tabuleiro(m, j, i, i === ja) : `<div class="tab-inv fora">${j.nome} saiu da expedição</div>`).join("");
   const alvoModo = !!ui.modoAlvo || (ui.pend && ui.pend.spec.tipo === "alvo");
   const alvosOk = ui.pend && ui.pend.spec.tipo === "alvo" ? ui.pend.spec.opcoes : (ui.modoAlvo ? m.alvosPossiveis().map(e => e.uid) : []);
-  const fileira = f => c.inimigos.filter(e => e.fileira === f && e.pv > 0).map(e => inimigoVis(m, e, alvosOk.includes(e.uid))).join("");
+  const fileira = f => c.inimigos.filter(e => e.fileira === f && e.pv > 0).map(e => inimigoVis(m, e, alvosOk.includes(e.uid), kIni)).join("");
   let campo = "";
   const temCentro = c.inimigos.some(e => e.fileira === "c" && e.pv > 0);
+  // tamanho das cartas de inimigo: fileiras lado a lado num combate normal; uma fileira grande num Horror ou Ancião
+  const filas = [...(temCentro ? ["c"] : []), ...s.jogadores.map((_, i) => i)].filter(f => c.inimigos.some(e => e.fileira === f && e.pv > 0));
+  const maxFila = Math.max(1, ...filas.map(f => c.inimigos.filter(e => e.fileira === f && e.pv > 0).length));
+  const largura = 1060, passoCarta = CARTA_W + 16;
+  const ladoALado = !temCentro;
+  const kIni = ladoALado ? Math.min(tune.escalaInimigo, (largura / s.jogadores.length - 10) / (maxFila * passoCarta))
+    : filas.length <= 1 ? Math.min(tune.escalaInimigo * 1.12, largura / (maxFila * passoCarta)) : Math.min(.55, largura / (maxFila * passoCarta));
   campo += s.jogadores.map((j, i) => { const f = fileira(i); return `<div class="fileira f${i} ${f ? "" : "vazia"}"><div class="rot-f">Fileira de ${j.nome}${c.encontros[i] ? ` · «${c.encontros[i]}»` : ""}</div>${f || (temCentro ? "" : `<div class="limpa">fileira limpa</div>`)}</div>`; }).join("");
   if (temCentro) campo = `<div class="fileira central"><div class="rot-f">Fileira central</div>${fileira("c")}</div>` + campo;
   const dado = ui.dado ? dadoSVG(ui.dado.t < 36 ? 1 + ((ui.dado.t >> 2) % 6) : ui.dado.valor, 70, ui.dado.t < 36) : "";
   const j = s.jogadores[ja];
   const jc = j.c;
   const pronto = s.prontos && s.prontos[ja];
+  const margemMao = Math.min(-14, (980 - jc.mao.length * CARTA_W * tune.escalaMao) / (2 * Math.max(1, jc.mao.length)));
   const mao = jc.mao.map((x, i) => {
     const erro = m.podeJogar(j, x); const k = m.custo(j, x);
     const sel = ui.modoAlvo && ui.modoAlvo.uid === x.uid;
-    return `<div class="cmao ${erro ? "nao" : "ok"} ${sel ? "sel" : ""}" data-a="carta" data-uid="${x.uid}" title="${erro ? esc(erro) : ""}" style="--i:${i};--n:${jc.mao.length}"><span class="tecla">${(i + 1) % 10}</span>${cartaVis(x, tune.escalaMao, { custo: k })}</div>`;
+    return `<div class="cmao ${erro ? "nao" : "ok"} ${sel ? "sel" : ""}" data-a="carta" data-uid="${x.uid}" title="${erro ? esc(erro) : ""}" style="--i:${i};--n:${jc.mao.length};margin:0 ${margemMao}px"><span class="tecla">${(i + 1) % 10}</span>${cartaVis(x, tune.escalaMao, { custo: k })}</div>`;
   }).join("");
   const banner = ui.pend && ui.pend.spec.tipo === "alvo" ? ui.pend.spec.titulo : ui.modoAlvo ? "Escolha o alvo (clique num inimigo · Esc cancela)" : "";
-  const ultimas = s.log.slice(-4).map(l => `<div>${esc(l)}</div>`).join("");
+  const ultimas = s.log.slice(-2).map(l => `<div>${esc(l)}</div>`).join("");
   return `<div class="tela combate ${alvoModo ? "modo-alvo" : ""}">
     <div class="barra"><span>Ato ${ROMANO[s.ato]} · ${c.tipo === "chefe" ? "Ancião" : c.tipo === "elite" ? "Horror" : "Criatura"} · Rodada ${c.rodada}</span>
       <span class="b-dir"><button class="bt mini" data-a="registro">Registro</button><button class="bt mini" data-a="regras">Regras</button><button class="bt mini ${ui.rapido ? "on" : ""}" data-a="rapido">Rápido</button></span></div>
     <div class="esq-tabs">${tabs}</div>
-    <div class="campo">${campo}<div class="dado-mesa">${dado}<small>Dado do Presságio</small></div><div class="ticker">${ultimas}</div></div>
+    <div class="campo ${ladoALado ? "lado" : ""}">${campo}<div class="dado-mesa">${dado}<small>Dado do Presságio</small></div><div class="ticker">${ultimas}</div></div>
     ${banner ? `<div class="banner-alvo">${esc(banner)}</div>` : ""}
     <div class="mesa-mao" style="--c:${j.cor}">
       <div class="pilha compra" data-a="pilha" data-p="compra" title="Pilha de Compra">${pilhaSVG()}<b>${jc.compra.length}</b><small>Compra</small></div>
@@ -290,8 +298,8 @@ function glifoSVG(t) {
   const forma = { relampago: `<path d="M13 2 L6 13 H11 L9 22 L18 9 H13 Z" fill="${cor}" stroke="#2a1d0a" stroke-width=".8"/>`, gelo: `<g stroke="${cor}" stroke-width="2"><path d="M12 2v20M3 7l18 10M3 17l18-10"/></g>`, vazio: `<circle cx="12" cy="12" r="8" fill="#1a1020" stroke="${cor}" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="${cor}"/>`, estelar: `<polygon points="${ESTRELA5(12, 12.5, 9, 3.8)}" fill="${cor}" stroke="#2a1d0a" stroke-width=".8"/>` }[t];
   return `<svg viewBox="0 0 24 24" width="28" height="28">${forma}</svg>`;
 }
-function inimigoVis(m, e, alvo) {
-  const d = INIMIGO[e.nome]; const k = e.fileira === "c" && INIMIGO[e.nome].cat !== "normal" ? tune.escalaInimigo * 1.12 : tune.escalaInimigo;
+function inimigoVis(m, e, alvo, k) {
+  const d = INIMIGO[e.nome]; k = k || tune.escalaInimigo;
   const pct = Math.max(0, e.pv / e.pvMax * 100);
   return `<div class="ini ${alvo ? "alvo" : ""} ${ui.agindo === e.uid ? "agindo" : ""}" id="ini-${e.uid}" data-a="inimigo" data-uid="${e.uid}" ${e.intencao ? `data-acao="${e.intencao.idx}"` : ""}>
     ${intencaoHTML(m, e)}
@@ -305,12 +313,12 @@ function modal(sp) {
   const m = ui.motor; let corpo = "", rodape = "";
   const titulo = sp.titulo || "";
   if (sp.tipo === "cartas" || sp.tipo === "recompensa") {
-    const k = sp.cartas.length > 8 ? .5 : .66;
+    const k = sp.cartas.length > 8 ? .6 : .85;
     corpo = `<div class="grade-cartas">${sp.cartas.map(x => `<div class="opc-carta ${ui.sel.includes(x.uid) ? "on" : ""}" data-a="sel-carta" data-uid="${x.uid}">${cartaVis(x, k)}</div>`).join("")}</div>`;
     const ok = ui.sel.length >= sp.min && ui.sel.length <= sp.max;
     rodape = sp.tipo === "recompensa" ? `<button class="bt" data-a="confirmar" ${ui.sel.length ? "" : "disabled"}>Ficar com a carta escolhida</button><button class="bt verm" data-a="recusar">Recusar (volta ao fundo)</button>` : `<span class="cont">${ui.sel.length} de ${sp.min === sp.max ? sp.max : sp.min + "–" + sp.max}</span><button class="bt" data-a="confirmar" ${ok ? "" : "disabled"}>Confirmar <small>Enter</small></button>`;
   } else if (sp.tipo === "vislumbrar") {
-    corpo = `<div class="grade-cartas">${ui.visOrdem.map((u, i) => { const x = sp.cartas.find(y => y.uid === u); const d = ui.visDesc.includes(u); return `<div class="opc-carta vis ${d ? "desc" : ""}"><div class="ord">${d ? "descartar" : (i + 1) + "º do topo"}</div>${cartaVis(x, .6)}<div class="vis-bts"><button class="bt mini" data-a="vis-esq" data-uid="${u}">Antes</button><button class="bt mini" data-a="vis-desc" data-uid="${u}">${d ? "Manter" : "Descartar"}</button><button class="bt mini" data-a="vis-dir" data-uid="${u}">Depois</button></div></div>`; }).join("")}</div>`;
+    corpo = `<div class="grade-cartas">${ui.visOrdem.map((u, i) => { const x = sp.cartas.find(y => y.uid === u); const d = ui.visDesc.includes(u); return `<div class="opc-carta vis ${d ? "desc" : ""}"><div class="ord">${d ? "descartar" : (i + 1) + "º do topo"}</div>${cartaVis(x, .8)}<div class="vis-bts"><button class="bt mini" data-a="vis-esq" data-uid="${u}">Antes</button><button class="bt mini" data-a="vis-desc" data-uid="${u}">${d ? "Manter" : "Descartar"}</button><button class="bt mini" data-a="vis-dir" data-uid="${u}">Depois</button></div></div>`; }).join("")}</div>`;
     rodape = `<button class="bt" data-a="vis-ok">Confirmar <small>Enter</small></button>`;
   } else if (sp.tipo === "artefatos") {
     corpo = `<div class="grade-cartas">${sp.artefatos.map(n => `<div class="opc-carta ${ui.sel.includes(n) ? "on" : ""}" data-a="sel-art" data-n="${esc(n)}">${miniArtefato(n, .95)}</div>`).join("")}</div>`;
@@ -333,14 +341,14 @@ function telaLoja() {
   const m = ui.motor, s = m.s, L = ui.pend.spec.loja;
   const precoC = (j, nome) => m.precoDeposito(j, { C: 3, I: 4, R: 6, X: 4 }[DEF[nome].rar]);
   const porJog = Object.entries(L.porJog).map(([ji, pj]) => { const j = s.jogadores[ji]; return `<div class="loja-j" style="--c:${j.cor}"><h3>${j.nome} · ${SIMBOLO.credito()} ${j.creditos}</h3><div class="linha-loja">
-      ${pj.cartas.map((n, i) => `<div class="item" data-a="comprar" data-acao="carta" data-jog="${ji}" data-i="${i}">${cartaVis({ nome: n, dono: j.id }, .5)}<div class="preco">${SIMBOLO.credito(precoC(j, n))}</div></div>`).join("")}
-      ${pj.rara.map((n, i) => `<div class="item" data-a="comprar" data-acao="carta" data-rara="1" data-jog="${ji}" data-i="${i}">${cartaVis({ nome: n, dono: j.id }, .5)}<div class="preco">${SIMBOLO.credito(precoC(j, n))}</div></div>`).join("")}
+      ${pj.cartas.map((n, i) => `<div class="item" data-a="comprar" data-acao="carta" data-jog="${ji}" data-i="${i}">${cartaVis({ nome: n, dono: j.id }, .58)}<div class="preco">${SIMBOLO.credito(precoC(j, n))}</div></div>`).join("")}
+      ${pj.rara.map((n, i) => `<div class="item" data-a="comprar" data-acao="carta" data-rara="1" data-jog="${ji}" data-i="${i}">${cartaVis({ nome: n, dono: j.id }, .58)}<div class="preco">${SIMBOLO.credito(precoC(j, n))}</div></div>`).join("")}
       <div class="item remover ${L.removeu[ji] ? "usado" : ""}" data-a="comprar" data-acao="remover" data-jog="${ji}"><div class="rem">Remover 1 carta<br><small>máx. 1 por visita</small></div><div class="preco">${SIMBOLO.credito(m.precoDeposito(j, 3))}</div></div>
     </div></div>`; }).join("");
   const comprador = ui.compradorLoja ?? m.idx(m.vivos()[0]);
   const jc = s.jogadores[comprador];
   const grupo = `<div class="loja-g"><h3>Para o grupo — compra: ${m.vivos().map(j => `<button class="bt mini ${m.idx(j) === comprador ? "on" : ""}" data-a="comprador" data-j="${m.idx(j)}">${j.nome} (${j.creditos})</button>`).join("")}</h3><div class="linha-loja">
-    ${L.incolores.map((n, i) => `<div class="item" data-a="comprar" data-acao="incolor" data-jog="${comprador}" data-i="${i}">${cartaVis({ nome: n, dono: "incolor" }, .5)}<div class="preco">${SIMBOLO.credito(m.precoDeposito(jc, 4))}</div></div>`).join("")}
+    ${L.incolores.map((n, i) => `<div class="item" data-a="comprar" data-acao="incolor" data-jog="${comprador}" data-i="${i}">${cartaVis({ nome: n, dono: "incolor" }, .58)}<div class="preco">${SIMBOLO.credito(m.precoDeposito(jc, 4))}</div></div>`).join("")}
     ${L.artefatos.map((n, i) => `<div class="item" data-a="comprar" data-acao="artefato" data-jog="${comprador}" data-i="${i}">${miniArtefato(n, .72)}<div class="preco">${SIMBOLO.credito(m.precoDeposito(jc, { Comum: 5, Incomum: 6, Raro: 8 }[ARTEFATOS[n].classe]))}</div></div>`).join("")}
     ${L.dep.map((n, i) => `<div class="item" data-a="comprar" data-acao="artefato" data-dep="1" data-jog="${comprador}" data-i="${i}">${miniArtefato(n, .72)}<div class="preco">${SIMBOLO.credito(m.precoDeposito(jc, 6))}</div></div>`).join("")}
     ${L.provisoes.map((n, i) => `<div class="item" data-a="comprar" data-acao="provisao" data-jog="${comprador}" data-i="${i}">${miniProvisao(n, .72)}<div class="preco">${SIMBOLO.credito(m.precoDeposito(jc, 2))}</div></div>`).join("")}
@@ -364,8 +372,8 @@ function telaFiguras() {
 function painel() {
   const m = ui.motor; const p = ui.painel; let corpo = "";
   if (p.tipo === "registro") corpo = `<div class="registro">${m.s.log.slice(-160).map(l => `<div>${esc(l)}</div>`).join("")}</div>`;
-  if (p.tipo === "baralho") { const j = m.s.jogadores[p.j]; corpo = `<div class="grade-cartas">${[...j.baralho].sort((a, b) => a.nome.localeCompare(b.nome)).map(x => cartaVis(x, .5)).join("")}</div>`; }
-  if (p.tipo === "pilha") { const j = m.s.jogadores[ui.jogAtivo]; let lista = j.c ? [...j.c[p.p]] : []; if (p.p === "compra") lista.sort((a, b) => a.nome.localeCompare(b.nome)); corpo = `${p.p === "compra" ? "<p class='nota'>Em ordem alfabética — a ordem real fica escondida.</p>" : ""}<div class="grade-cartas">${lista.map(x => cartaVis(x, .5)).join("") || "<p>vazia</p>"}</div>`; }
+  if (p.tipo === "baralho") { const j = m.s.jogadores[p.j]; corpo = `<div class="grade-cartas">${[...j.baralho].sort((a, b) => a.nome.localeCompare(b.nome)).map(x => cartaVis(x, .62)).join("")}</div>`; }
+  if (p.tipo === "pilha") { const j = m.s.jogadores[ui.jogAtivo]; let lista = j.c ? [...j.c[p.p]] : []; if (p.p === "compra") lista.sort((a, b) => a.nome.localeCompare(b.nome)); corpo = `${p.p === "compra" ? "<p class='nota'>Em ordem alfabética — a ordem real fica escondida.</p>" : ""}<div class="grade-cartas">${lista.map(x => cartaVis(x, .62)).join("") || "<p>vazia</p>"}</div>`; }
   if (p.tipo === "carta") corpo = `<div class="grande-carta">${cartaVis({ nome: p.n, apr: p.apr }, 1.3)}</div>`;
   if (p.tipo === "art") corpo = `<div class="grande-carta">${miniArtefato(p.n, 1.6)}</div>`;
   if (p.tipo === "ini") corpo = `<div class="grande-carta">${escala(inimigoHTML(INIMIGO[p.n]), CARTA_W, CARTA_H, 1.5)}</div>`;

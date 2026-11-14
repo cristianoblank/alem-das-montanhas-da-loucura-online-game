@@ -131,6 +131,11 @@
   .fileira { flex: 1; display: flex; gap: 16px; align-items: flex-end; justify-content: center; position: relative; padding-top: 18px; border-radius: 12px; }
   .fileira.central { background: #4a2d7022; border: 1px dashed #7a5aa8; }
   .fileira.vazia { flex: .25; }
+  .campo { padding-left: 96px; }
+  .campo.lado { flex-direction: row; gap: 10px; }
+  .campo.lado .fileira { align-items: center; padding-top: 24px; border: 1px dashed #ffffff14; }
+  .campo.lado .fileira.vazia { flex: .35; }
+  .campo.lado .rot-f { left: 10px; }
   .rot-f { position: absolute; left: 100px; top: 0; font: 700 13px var(--titulo); color: #b8a98a; letter-spacing: .08em; }
   .limpa { color: #7a8a7a; font-style: italic; align-self: center; }
   .ini { position: relative; display: flex; flex-direction: column; align-items: center; cursor: zoom-in; transition: transform .15s; }
@@ -151,7 +156,7 @@
   .dado-mesa small { display: block; font: 700 11px var(--titulo); color: #b8a98a; }
   .girando { animation: gira .25s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
-  .ticker { position: absolute; right: 0; top: -4px; width: 380px; font-size: 13px; color: #b8a98a; text-align: right; pointer-events: none; }
+  .ticker { position: absolute; right: 0; top: auto; bottom: -30px; width: 620px; z-index: 2; font-size: 13px; color: #b8a98a; text-align: right; pointer-events: none; }
   .ticker div:last-child { color: #efe6d2; }
   .banner-alvo { position: absolute; left: 420px; right: 10px; top: 566px; text-align: center; font: 700 17px var(--titulo); color: #ffd76a; text-shadow: 0 1px 3px #000; }
   .mesa-mao { position: absolute; left: 0; right: 0; bottom: 0; height: 320px; background: linear-gradient(#0000, #000a 30%); }
@@ -163,10 +168,10 @@
   .energia.zero { filter: grayscale(.8) brightness(.7); box-shadow: none; }
   .mao { position: absolute; left: 200px; right: 420px; bottom: 6px; height: 300px; display: flex; justify-content: center; align-items: flex-end; }
   .mao.pronta { opacity: .45; }
-  .cmao { position: relative; margin: 0 -14px; transition: transform .12s; transform: translateY(calc((var(--i) - (var(--n) - 1) / 2) * (var(--i) - (var(--n) - 1) / 2) * 3px)) rotate(calc((var(--i) - (var(--n) - 1) / 2) * 2.2deg)); cursor: pointer; }
-  .cmao:hover, .cmao.sel { transform: translateY(-150px) scale(1.75); z-index: 10; }
+  .cmao { position: relative; transition: transform .12s; transform: translateY(calc((var(--i) - (var(--n) - 1) / 2) * (var(--i) - (var(--n) - 1) / 2) * 3px)) rotate(calc((var(--i) - (var(--n) - 1) / 2) * 2.2deg)); cursor: pointer; }
+  .cmao:hover, .cmao.sel { transform: translateY(-110px) scale(1.5); z-index: 10; }
   .ini > .esc { transition: transform .12s; transform-origin: 50% 0; }
-  .ini:hover > .esc { transform: scale(1.7); z-index: 30; box-shadow: 0 8px 30px #000; }
+  .ini:hover > .esc { transform: scale(1.5); z-index: 30; box-shadow: 0 8px 30px #000; }
   .fileira.f1 .ini:hover > .esc, .fileira:last-child .ini:hover > .esc { transform-origin: 50% 100%; }
   .cmao.nao > .esc { filter: brightness(.6); }
   .cmao.sel > .esc { box-shadow: 0 0 0 4px #ffd76a, 0 0 26px #ffd76a; border-radius: 6px; }
