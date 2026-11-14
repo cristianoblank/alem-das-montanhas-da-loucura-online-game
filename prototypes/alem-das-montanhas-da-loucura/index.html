@@ -208,6 +208,7 @@
   .prologo p, .ato-txt { font: 19px/1.45 var(--fell); }
   .ato-txt { font-style: italic; border-top: 1px solid #6b5536; padding-top: 10px; }
   .painel { min-width: 700px; }
+  .menu-txt { font-size: 19px; text-align: center; max-width: 700px; margin: 0 auto 10px; }
   .registro { font-size: 15px; max-height: 640px; overflow: auto; } .registro div { border-bottom: 1px solid #0001; padding: 2px 0; }
   .grande-carta { display: flex; justify-content: center; }
   .regras { font-size: 16.5px; max-width: 900px; } .regras h4 { font: 700 16px var(--titulo); color: #8e2a1f; margin: 10px 0 4px; }
@@ -339,7 +340,7 @@ window.game = {
   step(n = 1, draw = true) { for (let i = 0; i < n; i++) step(); if (draw) UI.desenhar(); },
 };
 if (params.get('scene') === 'figures') UI.ui.figuras = true;
-else if (params.get('scene') === 'play') { UI.ui.autoPrimeiro = true; UI.iniciar({ inv: ['veterano', 'ocultista'], mapas: { 1: 'A', 2: 'A', 3: 'A' }, loucura: 0, variantes: {}, semente: (Number(params.get('seed')) || CONFIG.seed) >>> 0 }); }
+else if (params.get('scene') === 'play') { UI.ui.autoPrimeiro = true; UI.ui.semSalvar = true; UI.iniciar({ inv: ['veterano', 'ocultista'], mapas: { 1: 'A', 2: 'A', 3: 'A' }, loucura: 0, variantes: {}, semente: (Number(params.get('seed')) || CONFIG.seed) >>> 0 }); }
 last = clock.now();
 UI.desenhar();
 if (params.get('manual') === '1') UI.desenhar();

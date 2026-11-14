@@ -48,7 +48,7 @@ const io = {
   },
   pausa(n) { const k = Math.round(n * tune.pausaAnim / 8); if (ui.rapido || k <= 0) return Promise.resolve(); return new Promise(r => ui.esperas.push({ n: k, r })); },
   atualizar() { ui.sujo = true; return Promise.resolve(); },
-  salvar(st) { try { if (st) localStorage.setItem("amdl-save", JSON.stringify(st)); else localStorage.removeItem("amdl-save"); } catch (e) { } },
+  salvar(st) { if (ui.semSalvar) return; try { if (st) localStorage.setItem("amdl-save", JSON.stringify(st)); else localStorage.removeItem("amdl-save"); } catch (e) { } },
   abertura(ato) { return new Promise(r => { ui.abertura = { ato, r: () => { ui.abertura = null; ui.sujo = true; r(); } }; ui.sujo = true; }); }
 };
 
@@ -222,7 +222,7 @@ function telaMapa() {
     <div class="lado dir"><h3>Ancião do Ato</h3><div class="chefe-mini" data-a="ver-ini" data-n="${esc(s.anciao)}">${escala(inimigoHTML(chefe), CARTA_W, CARTA_H, .78)}</div>
       <h3>Esteatitos</h3><div class="ests">${est}</div>
       <div class="info">Loucura ${s.opcoes.loucura} · combates no Ato: ${s.combatesNoAto}${s.combatesNoAto >= 3 ? " (Encontros Difíceis)" : ""}</div>
-      <button class="bt mini" data-a="registro">Registro da partida</button> <button class="bt mini" data-a="regras">Regras rápidas</button>
+      <button class="bt mini" data-a="menu">Menu <small>Esc</small></button> <button class="bt mini" data-a="registro">Registro da partida</button> <button class="bt mini" data-a="regras">Regras rápidas</button>
     </div></div>`;
 }
 /* ---------- combate ---------- */
@@ -260,7 +260,7 @@ function telaCombate() {
   const ultimas = s.log.slice(-2).map(l => `<div>${esc(l)}</div>`).join("");
   return `<div class="tela combate ${alvoModo ? "modo-alvo" : ""}">
     <div class="barra"><span>Ato ${ROMANO[s.ato]} · ${c.tipo === "chefe" ? "Ancião" : c.tipo === "elite" ? "Horror" : "Criatura"} · Rodada ${c.rodada}</span>
-      <span class="b-dir"><button class="bt mini" data-a="registro">Registro</button><button class="bt mini" data-a="regras">Regras</button><button class="bt mini ${ui.rapido ? "on" : ""}" data-a="rapido">Rápido</button></span></div>
+      <span class="b-dir"><button class="bt mini" data-a="menu">Menu <small>Esc</small></button><button class="bt mini" data-a="registro">Registro</button><button class="bt mini" data-a="regras">Regras</button><button class="bt mini ${ui.rapido ? "on" : ""}" data-a="rapido">Rápido</button></span></div>
     <div class="esq-tabs">${tabs}</div>
     <div class="campo ${ladoALado ? "lado" : ""}">${campo}<div class="dado-mesa">${dado}<small>Dado do Presságio</small></div><div class="ticker">${ultimas}</div></div>
     ${banner ? `<div class="banner-alvo">${esc(banner)}</div>` : ""}
@@ -378,7 +378,10 @@ function painel() {
   if (p.tipo === "art") corpo = `<div class="grande-carta">${miniArtefato(p.n, 1.6)}</div>`;
   if (p.tipo === "ini") corpo = `<div class="grande-carta">${escala(inimigoHTML(INIMIGO[p.n]), CARTA_W, CARTA_H, 1.5)}</div>`;
   if (p.tipo === "regras") corpo = regrasRapidas();
-  const tit = { registro: "Registro da partida", baralho: "Baralho", pilha: { compra: "Pilha de Compra", descarte: "Descarte", banidas: "Banidas" }[p.p], carta: p.n, art: "Artefato", ini: p.n, regras: "Regras rápidas (do manual)" }[p.tipo];
+  if (p.tipo === "menu") corpo = p.confirmar
+    ? `<p class="menu-txt">Abandonar a expedição apaga o salvamento: a campanha volta ao zero e não dá para desfazer.</p><div class="opcoes"><button class="bt opc" data-a="abandonar-sim"><span class="num">1</span> Sim, abandonar e voltar ao menu inicial</button><button class="bt opc" data-a="menu"><span class="num">2</span> Não, voltar</button></div>`
+    : `<div class="opcoes"><button class="bt opc" data-a="fechar-painel"><span class="num">1</span> Continuar jogando</button><button class="bt opc" data-a="sair-menu"><span class="num">2</span> Voltar ao menu inicial <small class="g">a expedição fica salva no último nó do mapa: «Continuar» retoma dali</small></button><button class="bt opc" data-a="abandonar"><span class="num">3</span> Abandonar a expedição <small class="g">apaga o salvamento e zera a campanha</small></button></div>`;
+  const tit = { registro: "Registro da partida", baralho: "Baralho", pilha: { compra: "Pilha de Compra", descarte: "Descarte", banidas: "Banidas" }[p.p], carta: p.n, art: "Artefato", ini: p.n, regras: "Regras rápidas (do manual)", menu: p && p.confirmar ? "Abandonar a expedição?" : "Menu" }[p.tipo];
   return `<div class="modal-fundo painel-f" data-a="fechar-painel"><div class="modal painel" data-a="nada"><h2>${esc(tit || "")}</h2>${corpo}<div class="m-rod"><button class="bt" data-a="fechar-painel">Fechar <small>Esc</small></button></div></div></div>`;
 }
 function regrasRapidas() {
@@ -411,6 +414,10 @@ function clicar(el) {
   if (a === "semente") { ui.prep.semente = (Date.now() * 2654435761) >>> 0; return; }
   if (a === "comecar") { if (ui.prep.inv.length) iniciar(ui.prep); return; }
   if (a === "registro") { ui.painel = { tipo: "registro" }; return; }
+  if (a === "menu") { ui.painel = { tipo: "menu" }; return; }
+  if (a === "abandonar") { ui.painel = { tipo: "menu", confirmar: true }; return; }
+  if (a === "sair-menu") { voltarAoTitulo(false); return; }
+  if (a === "abandonar-sim") { voltarAoTitulo(true); return; }
   if (a === "regras") { ui.painel = { tipo: "regras" }; return; }
   if (a === "rapido") { ui.rapido = !ui.rapido; return; }
   if (a === "fechar-painel") { ui.painel = null; return; }
@@ -463,7 +470,8 @@ function jogarCartaUI(uid) {
 function tecla(code) {
   const m = ui.motor; const sp = ui.pend && ui.pend.spec; ui.sujo = true;
   if (code === "KeyM") return;
-  if (code === "Escape") { if (ui.painel) ui.painel = null; else ui.modoAlvo = null; return; }
+  if (code === "Escape") { if (ui.painel) ui.painel = null; else if (ui.modoAlvo) ui.modoAlvo = null; else if (m && !ui.fim) ui.painel = { tipo: "menu" }; return; }
+  if (ui.painel && ui.painel.tipo === "menu") { const dg = code.match(/^(?:Digit|Numpad)(\d)$/); const k = dg ? +dg[1] : 0; if (ui.painel.confirmar) { if (k === 1) voltarAoTitulo(true); if (k === 2) ui.painel = { tipo: "menu" }; } else { if (k === 1) ui.painel = null; if (k === 2) voltarAoTitulo(false); if (k === 3) ui.painel = { tipo: "menu", confirmar: true }; } return; }
   if (ui.painel) return;
   const dig = code.match(/^(?:Digit|Numpad)(\d)$/); const n = dig ? (+dig[1] === 0 ? 10 : +dig[1]) : 0;
   if (ui.tela === "titulo" && !m) { if (code === "Enter" || code === "Space") clicar({ dataset: { a: "novo" } }); return; }
@@ -490,6 +498,12 @@ function tecla(code) {
 }
 
 /* ================= partida ================= */
+// Volta ao título. A partida em andamento fica parada (suas promessas nunca se resolvem) e é descartada.
+function voltarAoTitulo(apagar) {
+  if (apagar) { try { localStorage.removeItem("amdl-save"); } catch (e) { } }
+  Object.assign(ui, { motor: null, semSalvar: false, tela: "titulo", pend: null, acaoResolve: null, abertura: null, modoAlvo: null, painel: null, fim: null, esperas: [], flut: [], dado: null, agindo: null, sel: [] });
+  ui.sujo = true;
+}
 async function iniciar(prep, salvo) {
   const m = new Motor(io, CONFIG); ui.motor = m; ui.tela = "jogo"; ui.fim = null; ui.sujo = true;
   if (salvo) m.carregar(salvo);
