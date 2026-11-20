@@ -61,12 +61,14 @@ const pausaPadrao = 8;
 class Motor {
   constructor(io, cfg) {
     catalogar(); catalogarArtefatos(); catalogarProvisoes(); catalogarInimigos();
-    this.io = io; this.cfg = cfg || {};
+    this.io = this.ioComVolta ? this.ioComVolta(io) : io; this.cfg = cfg || {};
     this.s = null;
     this.uid = 1;
   }
   /* ===== aleatoriedade (mulberry32 com estado salvo) ===== */
   r() {
+    if (this.simulando) this.cortar("sorteio");   // prévia «a seco» (js/previa.js): nunca sorteia de verdade
+    this.revel = (this.revel || 0) + 1;   // sorteio: daqui não se volta atrás (js/voltar.js)
     let a = (this.s.rng = (this.s.rng + 0x6D2B79F5) | 0);
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -176,9 +178,12 @@ class Motor {
     while (!s.fim) {
       s.fase = "mapa";
       if (this.io.salvar) this.io.salvar(this.salvar());
-      const opc = this.opcoesMapa();
-      const destino = await this.io.escolher({ tipo: "mapa", opcoes: opc, titulo: s.pos === null ? "Escolham um nó da linha 1" : "Escolham o próximo nó" });
-      await this.entrarNo(destino);
+      // um nó que não revela nada ao entrar (Acampamento, Achado) deixa voltar ao mapa na primeira escolha
+      await this.comVolta(async () => {
+        const opc = this.opcoesMapa();
+        const destino = await this.io.escolher({ tipo: "mapa", opcoes: opc, titulo: s.pos === null ? "Escolham um nó da linha 1" : "Escolham o próximo nó" });
+        await this.entrarNo(destino);
+      });
     }
     s.fase = "fim";
     if (this.io.salvar) this.io.salvar(null);
@@ -289,9 +294,11 @@ class Motor {
     for (const e of c.inimigos) e.novo = false;
     c.t = { habilidadeJogador: {} };
     // FASE 1 — PRESSÁGIO
+    s.faseRodada = "pressagio";
     c.dadoAnterior = c.dado; c.dado = this.d6();
     this.log(`Rodada ${c.rodada} — Presságio: o dado mostra ${c.dado}.`, "dado");
     this.io.evento({ tipo: "dado", valor: c.dado });
+    this.io.evento({ tipo: "fase", fase: "pressagio", rodada: c.rodada, dado: c.dado });   // a tela anuncia a rodada
     for (const e of c.inimigos) this.revelarIntencao(e);
     await this.pausa(20);
     // FASE 2 — TURNO DOS JOGADORES (simultâneo)
@@ -300,17 +307,24 @@ class Motor {
     if (this.checarFim()) return;
     await this.turnoJogadores();
     if (this.checarFim()) return;
-    // FASE 3 — FIM DO TURNO DOS JOGADORES
-    s.faseRodada = "fimJogadores";
-    for (const j of this.vivos()) { await this.fimTurno(j); if (this.checarFim()) return; }
-    // FASE 4 — TURNO DOS INIMIGOS
-    s.faseRodada = "inimigos";
-    await this.turnoInimigos();
-    if (this.checarFim()) return;
+    if (await this.fasesFimEInimigos()) return;
     // FASE 5 — FIM DA RODADA
     s.faseRodada = "fimRodada";
     await this.fimRodada();
     this.checarFim();
+  }
+  // Fases 3 e 4. Separadas da rodada porque a previsão do dano da rodada (js/previa.js) roda exatamente este trecho «a seco».
+  async fasesFimEInimigos() {
+    const s = this.s;
+    // FASE 3 — FIM DO TURNO DOS JOGADORES
+    s.faseRodada = "fimJogadores";
+    for (const j of this.vivos()) { await this.fimTurno(j); if (this.checarFim()) return true; }
+    // FASE 4 — TURNO DOS INIMIGOS
+    s.faseRodada = "inimigos";
+    this.io.evento({ tipo: "fase", fase: "inimigos", rodada: s.combate.rodada });
+    await this.pausa(14);     // tempo de a tela anunciar o turno dos inimigos (não muda regra nenhuma)
+    await this.turnoInimigos();
+    return this.checarFim();
   }
   checarFim() {
     const s = this.s, c = s.combate;
@@ -353,7 +367,7 @@ class Motor {
     if (s.combate.rodada === 1) { if (this.temArt(j, "Caderno de Decalques")) c.energia += 1; if (this.temArt(j, "Lanterna de Querosene")) c.energia += 1; }
     // (b) efeitos de início de turno: Necrose, Glifo Estelar, Poderes, efeitos adiados
     if (c.cond.necrose > 0) { const n = c.cond.necrose; c.cond.necrose--; this.log(`${j.nome} perde ${n} PV pela Necrose.`); await this.perderPV(j, n, { fonte: "necrose" }); if (this.s.fim) return; }
-    for (const g of c.glifos) if (g.t === "estelar") { c.energia += 1; }
+    for (const g of c.glifos) if (g.t === "estelar") { c.energia += 1; this.log(`Glifo Estelar de ${j.nome}: +1 de energia.`); }
     const adiados = c.proxTurno; c.proxTurno = [];
     for (const f of adiados) await f.call(this, j);
     await this.disparar("inicioTurno", j, {});
@@ -381,8 +395,9 @@ class Motor {
       if (a.tipo === "encerrar") { s.prontos[a.jog] = true; continue; }
       if (a.tipo === "reabrir") { delete s.prontos[a.jog]; continue; }
       if (s.prontos[a.jog]) continue;
-      if (a.tipo === "jogar") await this.jogarCarta(j, a.uid, a.alvo);
-      if (a.tipo === "provisao") await this.usarProvisao(j, a.i, a.alvo);
+      // uma carta ou Provisão que abre uma escolha pode ser desfeita enquanto nada foi revelado
+      if (a.tipo === "jogar") await this.comVolta(() => this.jogarCarta(s.jogadores[a.jog], a.uid, a.alvo), { desdeInicio: true });
+      if (a.tipo === "provisao") await this.comVolta(() => this.usarProvisao(s.jogadores[a.jog], a.i, a.alvo), { desdeInicio: true });
       if (a.tipo === "encerrarTurno") { s.prontos[a.jog] = true; await this.encerrarTurnoCedo(j); }
       if (this.checarFim()) return;
     }
@@ -402,7 +417,7 @@ class Motor {
       if (x.nome === "Vergonha") await this.aplicarJog(j, "tremulo", 1);
     }
     // glifos passivos, da esquerda para a direita (Estelar age no início do turno)
-    for (const g of [...c.glifos]) { if (!c.glifos.includes(g)) continue; await this.glifoPassivo(j, g); if (this.checarFim()) return; }
+    for (const g of [...c.glifos]) { if (!c.glifos.includes(g) || g.t === "estelar") continue; await this.glifoPassivo(j, g); if (this.checarFim()) return; }
     if (this.temArt(j, "Bastão de Esqui") && c.bloqueio === 0) { c.bloqueio = Math.min(20, 2); this.log(`Bastão de Esqui: ${j.nome} ganha 2 de Bloqueio.`); }
     // Efêmeras da mão são Banidas
     for (const x of [...c.mao]) if (this.efemero(x)) { await this.banir(j, x, "Efêmero"); }
@@ -503,7 +518,7 @@ class Motor {
     }
     if (tipo === "chefe") await this.artefatosDeChefe();
   }
-  revelar(pilha, n) { return pilha.splice(0, Math.min(n, pilha.length)); }
+  revelar(pilha, n) { this.revelou(); return pilha.splice(0, Math.min(n, pilha.length)); }
   async escolherCartaRecompensa(j, rev, titulo, op = {}) {
     if (!rev.length) return null;
     const ji = this.idx(j);
@@ -556,17 +571,26 @@ class Motor {
     if (this.temArt(j, "Contrato com a Fundação")) n += 1;
     j.creditos += n; this.log(`${j.nome} ganha ${n} crédito(s) (${j.creditos}).`);
   }
+  /* Cap. 10: 2 espaços de Provisão; sem espaço livre, descarte uma das suas (ou a nova).
+     A tela mostra as cartas (imagem e texto) da nova e das que o investigador já tem. */
   async ganharProvisao(j, nome) {
-    const B = this.s.baralhos;
-    if (!nome) { nome = B.provisoes.shift(); if (!nome) return; }
+    const B = this.s.baralhos; const doBaralho = !nome;
+    if (!nome) { this.revelou(); nome = B.provisoes.shift(); if (!nome) return; }
+    const itens = [...j.provisoes.map(n => ({ nome: n })), { nome, nova: true }];
     if (j.provisoes.length >= j.slotsProv) {
-      const opc = [...j.provisoes, nome];
-      const r = await this.io.escolher({ tipo: "opcoes", titulo: `${j.nome}: sem espaço de Provisão`, texto: "Descarte uma das suas Provisões ou a nova.", opcoes: opc.map((p, i) => ({ rotulo: `Descartar ${p}${i === opc.length - 1 ? " (nova)" : ""}` })) });
-      const fora = opc.splice(r, 1)[0]; B.provisoes.push(fora); j.provisoes = opc;
-    } else j.provisoes.push(nome);
+      const r = await this.io.escolher({ tipo: "provisoes", jog: this.idx(j), descartar: true, itens, titulo: `${j.nome}: sem espaço de Provisão`, texto: `${j.nome} tem ${j.slotsProv} espaços de Provisão, todos ocupados. Descarte uma das suas — ou a nova.` });
+      const k = Math.max(0, Math.min(itens.length - 1, +r || 0));
+      const fica = itens.map(x => x.nome); const fora = fica.splice(k, 1)[0]; B.provisoes.push(fora); j.provisoes = fica;
+      this.log(k === itens.length - 1 ? `${j.nome} descarta a Provisão nova, ${nome}.` : `${j.nome} recebe a Provisão ${nome} e descarta ${fora}.`);
+      return;
+    }
+    j.provisoes.push(nome);
     this.log(`${j.nome} recebe a Provisão ${nome}.`);
+    // veio do baralho: mostra a carta para a pessoa saber o que ganhou
+    if (doBaralho) await this.io.escolher({ tipo: "provisoes", jog: this.idx(j), descartar: false, itens, titulo: `${j.nome} recebe uma Provisão`, texto: "" });
   }
   async ganharArtefato(j) {
+    this.revelou();
     const B = this.s.baralhos; const nome = B.artefatos.shift();
     if (!nome) { this.log("O baralho de Artefatos acabou."); return; }
     await this.obterArtefato(j, nome);
@@ -577,7 +601,7 @@ class Motor {
     await this.disparar("obter", j, { artefato: nome });
   }
   async adicionarTrauma(j, nome) {
-    if (!nome) { const B = this.s.baralhos; nome = B.traumas.shift(); B.traumas.push(nome); }
+    if (!nome) { this.revelou(); const B = this.s.baralhos; nome = B.traumas.shift(); B.traumas.push(nome); }
     let copias = 1;
     if (this.V.sanidade) {
       if (j.sanidade > 0) {
@@ -620,7 +644,7 @@ class Motor {
       if (!opc.length) return;
       const r = await this.io.escolher({ tipo: "cartas", jog: this.idx(j), cartas: opc, min: 1, max: 1, titulo: titulo + (n > 1 ? ` (${k + 1}/${n})` : "") });
       const x = this.removerDoBaralho(j, r[0]);
-      const nova = j.recompensas.shift();
+      this.revelou(); const nova = j.recompensas.shift();
       if (nova) { j.baralho.push(this.nova(nova, j.id)); this.log(`${x.nome} se Transforma em ${nova}.`); }
     }
   }

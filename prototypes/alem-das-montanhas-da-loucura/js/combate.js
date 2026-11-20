@@ -9,6 +9,9 @@
 (function () {
 const M = globalThis;
 const MotorC = M.Motor, DEF_ = M.DEF, ART_ = M.ARTEFATOS, INI_ = M.INIMIGO;
+const NOME_POSTURA = { neutra: "Neutra", lucidez: "Lucidez", panico: "Pânico", compreensao: "Compreensão" };
+const NOME_GLIFO = { relampago: "de Relâmpago", gelo: "de Gelo", vazio: "do Vazio", estelar: "Estelar" };
+Object.assign(M, { NOME_POSTURA, NOME_GLIFO });
 
 Object.assign(MotorC.prototype, {
   /* ================= pilhas ================= */
@@ -20,7 +23,7 @@ Object.assign(MotorC.prototype, {
         c.compra = this.embaralhar(c.descarte); c.descarte = [];
         this.log(`${j.nome} embaralha o Descarte para formar a Pilha de Compra.`);
       }
-      const x = c.compra.shift();
+      const x = c.compra.shift(); this.revelou();
       if (c.mao.length >= (this.cfgv("maoMax") || 10)) { c.descarte.push(x); this.log(`Mão cheia: ${x.nome} vai para o Descarte.`); continue; }
       c.mao.push(x); compradas++;
       if (x.nome === "Abismo Interior") { c.energia = Math.max(0, c.energia - 1); this.log(`Abismo Interior: ${j.nome} perde 1 de energia.`); }
@@ -72,6 +75,7 @@ Object.assign(MotorC.prototype, {
     const c = j.c; if (this.temArt(j, "Binóculo Zeiss")) n += 1;
     if (!c.compra.length && c.descarte.length) { c.compra = this.embaralhar(c.descarte); c.descarte = []; }
     const topo = c.compra.slice(0, n); if (!topo.length) return;
+    this.revelou();
     const r = await this.io.escolher({ tipo: "vislumbrar", jog: this.idx(j), cartas: topo, titulo: `Vislumbrar ${n}: descarte quantas quiser e ordene as outras` });
     c.compra.splice(0, topo.length);
     const desc = topo.filter(x => r.descartar.includes(x.uid));
@@ -186,7 +190,8 @@ Object.assign(MotorC.prototype, {
       if (alvo.pv <= 0) break;
       let d = base + (op.ataque === false ? 0 : c.cond.furia);
       if (op.ataque !== false && debil && d > 0) d = Math.max(1, d - 1);
-      if (alvo.cond.exposto > 0) d *= 2;
+      // Cap. 6: só cartas do tipo Ataque são afetadas por Fúria, Debilitado, Exposto e posturas
+      if (op.ataque !== false && alvo.cond.exposto > 0) d *= 2;
       if (op.ataque !== false) { if (c.postura === "panico") d *= 2; if (c.postura === "compreensao") d *= 3; }
       if (op.ataque !== false && alvo.cond.exposto > 0 && this.temArt(j, "Lupa de Campo")) d += 1;
       if (op.dobro || (op.ataque !== false && c.dobro)) d *= 2;
@@ -351,54 +356,68 @@ Object.assign(MotorC.prototype, {
   /* ================= Estudante: posturas ================= */
   async mudarPostura(j, nova, op = {}) {
     const c = j.c; if (!c) return;
-    if (c.postura === nova) return;
+    if (c.postura === nova) { this.log(`${j.nome} já está em ${NOME_POSTURA[nova]}: nada acontece.`); return; }
     const antiga = c.postura; c.postura = nova;
-    this.log(`${j.nome}: ${{ neutra: "Neutra", lucidez: "Lucidez", panico: "Pânico", compreensao: "Compreensão" }[nova]}.`);
+    this.log(`${j.nome}: ${NOME_POSTURA[antiga]} → ${NOME_POSTURA[nova]}.`);
+    this.io.evento({ tipo: "postura", jog: this.idx(j), antiga, nova });
     if (antiga === "lucidez") { c.energia += 2; this.log("Saiu da Lucidez: +2 de energia."); }
-    if (nova === "compreensao") { c.energia += 3; c.sairCompreensao = true; this.log("Compreensão: +3 de energia."); }
-    if (op.automatico && nova === "neutra") { /* volta automática da Compreensão também é mudança */ }
+    if (nova === "compreensao") { c.energia += 3; c.sairCompreensao = true; this.log("Compreensão: +3 de energia; Ataques causam o triplo até o início do próximo turno."); }
+    if (nova === "panico") this.log("Pânico: os Ataques de " + j.nome + " causam o dobro — e os que recebe também.");
     for (const x of [...c.descarte]) if (x.nome === "Rajada de Golpes" && c.mao.length < 10) { c.descarte.splice(c.descarte.indexOf(x), 1); c.mao.push(x); this.log("Rajada de Golpes volta para a mão."); }
     await this.disparar("mudouPostura", j, { antiga, nova });
     if (nova === "panico") await this.disparar("entrouPanico", j, {});
   },
   async ganharRevelacao(j, n) {
     const c = j.c; c.revelacao += n;
-    if (c.revelacao >= 5) { c.revelacao = 0; this.log("Revelação chega a 5."); await this.mudarPostura(j, "compreensao"); }
+    this.log(`${j.nome} ganha ${n} Revelação (${Math.min(5, c.revelacao)}/5).`);
+    this.io.evento({ tipo: "revelacao", jog: this.idx(j), n });
+    if (c.revelacao >= 5) { c.revelacao = 0; this.log("Revelação chega a 5: zera a trilha e entra em Compreensão."); await this.mudarPostura(j, "compreensao"); }
   },
 
   /* ================= Geólogo: glifos ================= */
   async inscrever(j, t, n = 1) {
     const c = j.c;
     for (let i = 0; i < n; i++) {
-      if (c.slotsGlifo <= 0) return;
-      if (c.glifos.length >= c.slotsGlifo) await this.ativar(j, 1);
+      if (c.slotsGlifo <= 0) { this.log(`${j.nome} não tem espaços de glifo.`); return; }
+      if (c.glifos.length >= c.slotsGlifo) { this.log("Espaços cheios: o glifo mais à esquerda é Ativado para dar lugar."); await this.ativar(j, 1); if (this.checarFim()) return; }
       c.glifos.push({ t, cargas: t === "vazio" ? 1 : 0 });
-      this.log(`${j.nome} Inscreve um Glifo ${{ relampago: "de Relâmpago", gelo: "de Gelo", vazio: "do Vazio", estelar: "Estelar" }[t]}.`);
+      this.log(`${j.nome} Inscreve um Glifo ${NOME_GLIFO[t]} no espaço ${c.glifos.length}.`);
+      this.io.evento({ tipo: "glifo", jog: this.idx(j), txt: "Inscreve " + NOME_GLIFO[t].replace(/^d[eo] /, "") });
     }
   },
   async ativar(j, vezes = 1) {
-    const c = j.c; const g = c.glifos[0]; if (!g) return null;
+    const c = j.c; const g = c.glifos[0];
+    if (!g) { this.log(`${j.nome} não tem glifo inscrito para Ativar.`); return null; }
+    this.io.evento({ tipo: "glifo", jog: this.idx(j), txt: "Ativa " + NOME_GLIFO[g.t].replace(/^d[eo] /, "") + (vezes > 1 ? " ×" + vezes : "") });
     for (let i = 0; i < vezes; i++) { await this.efeitoGlifo(j, g, "ativ"); if (this.checarFim()) break; }
     const k = c.glifos.indexOf(g); if (k >= 0) c.glifos.splice(k, 1);
     return g;
   },
   async glifoPassivo(j, g) { await this.efeitoGlifo(j, g, "pass"); },
+  // valor de um glifo agora (Cap. 13): Concentração soma a Relâmpago, Gelo e ao ganho de carga do Vazio
+  valorGlifo(j, g, modo) {
+    const conc = j.c.concentracao;
+    if (g.t === "relampago" || g.t === "gelo") return (modo === "pass" ? 1 : 2) + conc;
+    if (g.t === "vazio") return modo === "pass" ? 1 + conc : g.cargas;
+    return modo === "pass" ? 1 : 2;   // Estelar: energia
+  },
   async efeitoGlifo(j, g, modo) {
-    const c = j.c, conc = c.concentracao;
+    const c = j.c, n = this.valorGlifo(j, g, modo);
+    const como = `Glifo ${NOME_GLIFO[g.t]} (${modo === "pass" ? "passivo" : "Ativação"})`;
     if (g.t === "relampago") {
-      const n = (modo === "pass" ? 1 : 2) + conc;
-      if (this.temPoder(j, "Eletrodinâmica")) { for (const e of this.fileiraDe(j)) await this.danoGlifo(j, e, n); }
-      else { const e = await this.escolherInimigo(j, `Glifo de Relâmpago: ${n} de dano a um inimigo`); await this.danoGlifo(j, e, n); }
-    } else if (g.t === "gelo") { await this.ganharBloqueio(j, (modo === "pass" ? 1 : 2) + conc, { carta: false }); }
+      if (this.temPoder(j, "Eletrodinâmica")) { this.log(`${como}: ${n} de dano a todos os inimigos da fileira.`); for (const e of this.fileiraDe(j)) await this.danoGlifo(j, e, n); }
+      else { const e = await this.escolherInimigo(j, `Glifo de Relâmpago: ${n} de dano a um inimigo`); if (e) this.log(`${como}: ${n} de dano em ${e.nome}.`); await this.danoGlifo(j, e, n); }
+    } else if (g.t === "gelo") { this.log(`${como}: ${n} de Bloqueio.`); await this.ganharBloqueio(j, n, { carta: false }); }
     else if (g.t === "vazio") {
-      if (modo === "pass") g.cargas += 1 + conc;
+      if (modo === "pass") { g.cargas += n; this.log(`${como}: +${n} carga${n > 1 ? "s" : ""} (fica com ${g.cargas}).`); }
       else {
         const vivos = this.alvosPossiveis(j); if (!vivos.length) return;
         const min = Math.min(...vivos.map(e => e.pv)); const emp = vivos.filter(e => e.pv === min);
         const e = emp.length > 1 ? await this.escolherInimigo(j, `Glifo do Vazio: ${g.cargas} de dano (empate)`, emp) : emp[0];
+        this.log(`${como}: ${g.cargas} de dano em ${e.nome}, o inimigo com menos PV.`);
         await this.danoGlifo(j, e, g.cargas);
       }
-    } else if (g.t === "estelar") { if (modo === "ativ") { c.energia += 2; } else c.energia += 1; }
+    } else if (g.t === "estelar") { c.energia += n; this.log(`${como}: +${n} de energia.`); }
   },
   async escolherInimigo(j, titulo, opc) {
     opc = opc || this.alvosPossiveis(j); if (!opc.length) return null; if (opc.length === 1) return opc[0];

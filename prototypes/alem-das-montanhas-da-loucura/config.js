@@ -17,5 +17,12 @@ window.CONFIG = {
   // --- tela ---
   pausaAnim: { value: 8, min: 0, max: 30, step: 1 },        // passos (1/60 s) entre efeitos resolvidos em ordem
   escalaMao: { value: 0.82, min: 0.4, max: 1, step: 0.02 }, // tamanho das cartas na mão
-  escalaInimigo: { value: 0.85, min: 0.4, max: 1, step: 0.02 } // tamanho das cartas de inimigo na mesa
+  escalaInimigo: { value: 0.85, min: 0.4, max: 1, step: 0.02 }, // tamanho das cartas de inimigo na mesa
+  previa: { value: 1, min: 0, max: 1, step: 1 },            // 1 = mostra a prévia do dano ao mirar e a previsão da rodada
+  animGolpe: { value: 27, min: 0, max: 60, step: 1 },       // passos (1/60 s) do tremor e do clarão de quem leva um golpe (0 desliga)
+  animMorte: { value: 30, min: 0, max: 90, step: 1 },       // passos que o inimigo derrotado leva para se desfazer
+  animTraco: { value: 34, min: 0, max: 90, step: 1 },       // passos do traço entre quem bate e quem apanha
+  zoomInimigo: { value: 40, min: 0, max: 180, step: 5 },    // passos com o mouse parado sobre um inimigo até a carta aumentar (0 = nunca; o clique sempre abre a carta)
+  faixaFase: { value: 85, min: 0, max: 240, step: 5 },      // passos que a faixa «Rodada N» / «Turno dos inimigos» fica na tela (0 desliga)
+  animCarta: { value: 16, min: 0, max: 60, step: 1 }        // passos do voo de uma carta entre a pilha, a mão e o descarte (0 desliga)
 };

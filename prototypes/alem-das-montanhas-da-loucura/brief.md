@@ -7,6 +7,11 @@ Respostas: quero tudo copia fiel e identica do manual e das cartas e tudo que te
 
 After play: joguei, as cartas estão pequenas demais para ler poderia aumentar um pouco
 After play: nao achei como sair. e voltar menu inicial, zerando a campanha
+After play: os investigadores não têm seus poderes funcionando, ou ao menos o geólogo e a estudante não têm como usar os glifos e os estados; deveria ter um botão, algo para ativar e acompanhar essas mecânicas únicas de cada investigador, seguindo as regras e o manual
+After play: as provisões não estão claras, deveria ter um texto explicando o efeito de cada uma e, quando chega a terceira e passa do limite, mostrar a descrição da oferecida e das que serão trocadas, com a imagem pequena da carta; em todos os menus de escolha deve ter a opção voltar quando possível, menos quando algo como cartas já foi revelado; nas fileiras, uma imagem pequena mostrando qual investigador está naquela fileira de inimigos
+After play: tem mais alguma ideia de melhoria de UI, o mouse, o cursor, o delineamento das cartas, o dano ocorrendo; não sei o que indicar, só sei que poderia melhorar (escolhido: prévia do dano, golpe animado, quem bate em quem, contorno das cartas e mira)
+After play: sim, fazer também os itens 6 e 7 (zoom dos inimigos com atraso; faixa das fases da rodada e botão de encerrar chamando)
+After play: a mudança 8 agora (cartas voando entre a pilha, a mão e o descarte; cursores próprios)
 
 **Pitch:** O jogo de tabuleiro *Além das Montanhas da Loucura* inteiro, regra por regra e carta por carta, jogado no navegador por uma pessoa que comanda dois investigadores, com a tela organizada como um roguelike deckbuilder de computador.
 

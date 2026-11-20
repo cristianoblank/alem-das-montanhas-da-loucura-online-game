@@ -22,6 +22,7 @@ Object.assign(M.Motor.prototype, {
       if (d === 6) return this.deposito();
     }
     const valido = n => { const ev = JOGO.eventos.find(e => e.n === n); return ev.atos.split("-").includes(ROMANO[s.ato]); };
+    this.revelou();   // o Evento revelado não se desfaz
     const puxar = () => { for (let i = 0; i < B.eventos.length; i++) { const n = B.eventos.shift(); if (valido(n)) return n; B.eventos.push(n); } return null; };
     let nome = puxar();
     if (this.vivos().some(j => this.temArt(j, "Bússola Desregulada"))) {
@@ -36,22 +37,23 @@ Object.assign(M.Motor.prototype, {
     this.log(`Mistério: «${nome}».`, "titulo");
     const impl = M.EVENTOS[nome];
     const grupo = i => /cada jogador|um jogador|combate|o grupo avança/.test(ev.op[i]);
-    const ordem = []; for (let i = 0; i < s.jogadores.length; i++) { const j = s.jogadores[(s.olhar + i) % s.jogadores.length]; if (!j.fora) ordem.push(j); }
-    let decidiuGrupo = false;
-    for (let k = 0; k < ordem.length && !decidiuGrupo; k++) {
-      const j = ordem[k];
+    // um passo por investigador, a partir do Olhar; voltar atrás vale enquanto nada foi revelado (js/voltar.js)
+    const ordemIdx = []; for (let i = 0; i < s.jogadores.length; i++) { const k = (s.olhar + i) % s.jogadores.length; if (!s.jogadores[k].fora) ordemIdx.push(k); }
+    await this.emPassos(ordemIdx.map((ji, k) => async () => {
+      const j = s.jogadores[ji], ordem = ordemIdx.map(i => s.jogadores[i]);
       const opcoes = ev.op.map((t, i) => ({ rotulo: t, desabilitada: (k > 0 && grupo(i)) || (impl.pode && impl.pode[i] && !impl.pode[i].call(this, j)), grupo: grupo(i) }));
-      const r = await this.io.escolher({ tipo: "evento", evento: nome, jog: this.idx(j), titulo: nome, texto: ev.txt, opcoes, img: ev.img, quem: k === 0 ? `${j.nome} tem o Olhar do Abismo: escolhe primeiro (opções do grupo valem para todos)` : `${j.nome} escolhe a própria opção` });
+      const r = await this.io.escolher({ tipo: "evento", evento: nome, jog: ji, titulo: nome, texto: ev.txt, opcoes, img: ev.img, quem: k === 0 ? `${j.nome} tem o Olhar do Abismo: escolhe primeiro (opções do grupo valem para todos)` : `${j.nome} escolhe a própria opção` });
       this.log(`${grupo(r) ? "O grupo" : j.nome} escolhe: ${ev.op[r]}`);
-      if (grupo(r)) { decidiuGrupo = true; await impl.op[r].call(this, null, ordem); }
-      else await impl.op[r].call(this, j, ordem);
-      if (s.fim) return;
-    }
+      if (grupo(r)) { await impl.op[r].call(this, null, ordem); return "parar"; }
+      await impl.op[r].call(this, j, ordem);
+      if (s.fim) return "parar";
+    }));
+    if (s.fim) return;
     B.eventos.push(nome);
   },
   async combateDeEvento(dificil, extra) { return this.combateCriatura({ dificil, contaPrimeiros: false, recompensa: "criatura", extraVitoria: extra }); },
   async revelarEscolherIncolor(j, n) {
-    const B = this.s.baralhos; const rev = B.incolores.splice(0, n);
+    this.revelou(); const B = this.s.baralhos; const rev = B.incolores.splice(0, n);
     const r = await this.io.escolher({ tipo: "recompensa", jog: this.idx(j), cartas: rev.map((nome, i) => ({ uid: "i" + i, nome, dono: "incolor" })), min: 0, max: 1, titulo: "Escolha 1 carta Incolor" });
     rev.forEach((nome, i) => { if (r.includes("i" + i)) { j.baralho.push(this.nova(nome, "incolor")); this.log(`${j.nome} adiciona ${nome}.`); } else B.incolores.push(nome); });
   },
@@ -60,19 +62,22 @@ Object.assign(M.Motor.prototype, {
   async acampamento() {
     const s = this.s; s.fase = "acampamento";
     for (const j of this.vivos()) await this.disparar("entrarAcampamento", j, {});
-    for (const j of this.vivos()) {
+    // um passo por investigador e um para as trocas; voltar atrás vale enquanto nada foi revelado
+    const passos = this.vivos().map(x => this.idx(x)).map(ji => async () => {
+      const j = s.jogadores[ji];
       const desc = this.louc(6) ? 2 : (this.cfgv("descanso") ?? 3);
       const opc = [
-        { rotulo: `Descansar: recupere ${desc} PV`, desabilitada: this.temArt(j, "Lâmpada Ancestral") || j.pv >= j.pvMax && false },
+        { rotulo: `Descansar: recupere ${desc} PV`, desabilitada: this.temArt(j, "Lâmpada Ancestral") },
         { rotulo: "Aprimorar: Aprimore 1 carta do seu baralho" },
         { rotulo: "Buscar o Esteatito do Acampamento (abre mão da sua ação)", desabilitada: s.esteatitos.acampamento || s.ato === 4 }
       ];
-      const r = await this.io.escolher({ tipo: "acampamento", jog: this.idx(j), titulo: `Acampamento — ${j.nome}`, texto: `PV ${j.pv}/${j.pvMax}`, opcoes: opc });
+      const r = await this.io.escolher({ tipo: "acampamento", jog: ji, titulo: `Acampamento — ${j.nome}`, texto: `PV ${j.pv}/${j.pvMax}`, opcoes: opc });
       if (r === 0) await this.curar(j, desc);
       if (r === 1) await this.aprimorarEscolha(j, `${j.nome}: Aprimore 1 carta`);
       if (r === 2) { s.esteatitos.acampamento = true; this.log("O grupo ganha o Esteatito do Acampamento."); }
-    }
-    await this.trocasForaDeCombate("No Acampamento, os investigadores podem trocar Provisões e créditos.");
+    });
+    passos.push(() => this.trocasForaDeCombate("No Acampamento, os investigadores podem trocar Provisões e créditos."));
+    await this.emPassos(passos);
   },
   async trocasForaDeCombate(texto) {
     if (this.vivos().length < 2) return;
@@ -98,30 +103,37 @@ Object.assign(M.Motor.prototype, {
   precoDeposito(j, base) { let p = base; if (this.temArt(j, "Carteira de Sócio da Miskatonic")) p -= 1; if (this.louc(8)) p += 1; return Math.max(0, p); },
   async deposito() {
     const s = this.s, B = s.baralhos; s.fase = "deposito";
-    const loja = { porJog: {}, incolores: B.incolores.splice(0, 2), artefatos: B.artefatos.splice(0, 3), dep: B.deposito.splice(0, 1), provisoes: B.provisoes.splice(0, 3), removeu: {} };
-    for (const j of this.vivos()) loja.porJog[this.idx(j)] = { cartas: j.recompensas.splice(0, 3), rara: j.raras.splice(0, 1) };
-    this.s.loja = loja;
+    this.revelou();   // a loja revelada não se desfaz
+    s.loja = { porJog: {}, incolores: B.incolores.splice(0, 2), artefatos: B.artefatos.splice(0, 3), dep: B.deposito.splice(0, 1), provisoes: B.provisoes.splice(0, 3), removeu: {} };
+    for (const j of this.vivos()) s.loja.porJog[this.idx(j)] = { cartas: j.recompensas.splice(0, 3), rara: j.raras.splice(0, 1) };
     while (true) {
-      const r = await this.io.escolher({ tipo: "loja", titulo: "Depósito — lançamento aéreo de suprimentos", loja });
+      const r = await this.io.escolher({ tipo: "loja", titulo: "Depósito — lançamento aéreo de suprimentos", loja: s.loja });
       if (!r || r.acao === "sair") break;
-      const j = s.jogadores[r.jog];
-      const pagar = p => { if (j.creditos < p) { this.log(`${j.nome} não tem créditos suficientes.`); return false; } j.creditos -= p; return true; };
-      const kit = this.temArt(j, "Kit de Manutenção");
-      if (r.acao === "carta") {
-        const pj = loja.porJog[r.jog]; const lista = r.rara ? pj.rara : pj.cartas; const nome = lista[r.i]; if (!nome) continue;
-        if (!pagar(this.precoDeposito(j, PRECO_CARTA[M.DEF[nome].rar]))) continue;
-        lista.splice(r.i, 1); j.baralho.push(this.nova(nome, j.id, kit)); this.log(`${j.nome} compra ${nome}${kit ? " (Aprimorada)" : ""}.`);
-      }
-      if (r.acao === "incolor") { const nome = loja.incolores[r.i]; if (!nome || !pagar(this.precoDeposito(j, 4))) continue; loja.incolores.splice(r.i, 1); j.baralho.push(this.nova(nome, "incolor", kit)); this.log(`${j.nome} compra ${nome}.`); }
-      if (r.acao === "artefato") { const lista = r.dep ? loja.dep : loja.artefatos; const nome = lista[r.i]; if (!nome) continue; if (!pagar(this.precoDeposito(j, PRECO_ART[M.ARTEFATOS[nome].classe]))) continue; lista.splice(r.i, 1); await this.obterArtefato(j, nome); }
-      if (r.acao === "provisao") { const nome = loja.provisoes[r.i]; if (!nome) continue; if (j.provisoes.length >= j.slotsProv) { this.log("Sem espaço de Provisão."); continue; } if (!pagar(this.precoDeposito(j, 2))) continue; loja.provisoes.splice(r.i, 1); await this.ganharProvisao(j, nome); }
-      if (r.acao === "remover") { if (loja.removeu[r.jog]) continue; if (j.creditos < this.precoDeposito(j, 3)) { this.log("Créditos insuficientes."); continue; } const x = await this.removerCartaEscolha(j, `${j.nome}: remova 1 carta (${this.precoDeposito(j, 3)} créditos)`); if (x) { j.creditos -= this.precoDeposito(j, 3); loja.removeu[r.jog] = true; } }
-      if (r.acao === "credito") { const outro = s.jogadores[r.para]; if (j.creditos > 0) { j.creditos--; outro.creditos++; } }
+      // cada compra é uma ação: se ela abrir uma escolha (remover carta, trocar Provisão), dá para voltar
+      await this.comVolta(() => this.acaoLoja(r), { desdeInicio: true });
     }
+    const loja = s.loja;
     // itens não comprados voltam para o fundo
     for (const [ji, pj] of Object.entries(loja.porJog)) { const j = s.jogadores[ji]; j.recompensas.push(...pj.cartas); j.raras.push(...pj.rara); }
     B.incolores.push(...loja.incolores); B.artefatos.push(...loja.artefatos); B.deposito.push(...loja.dep); B.provisoes.push(...loja.provisoes);
-    this.s.loja = null;
+    s.loja = null;
+  },
+
+  async acaoLoja(r) {
+    const s = this.s, loja = s.loja, j = s.jogadores[r.jog];
+    const pagar = p => { if (j.creditos < p) { this.log(`${j.nome} não tem créditos suficientes.`); return false; } j.creditos -= p; return true; };
+    const kit = this.temArt(j, "Kit de Manutenção");
+    if (r.acao === "carta") {
+      const pj = loja.porJog[r.jog]; const lista = r.rara ? pj.rara : pj.cartas; const nome = lista[r.i]; if (!nome) return;
+      if (!pagar(this.precoDeposito(j, PRECO_CARTA[M.DEF[nome].rar]))) return;
+      lista.splice(r.i, 1); j.baralho.push(this.nova(nome, j.id, kit)); this.log(`${j.nome} compra ${nome}${kit ? " (Aprimorada)" : ""}.`);
+    }
+    if (r.acao === "incolor") { const nome = loja.incolores[r.i]; if (!nome || !pagar(this.precoDeposito(j, 4))) return; loja.incolores.splice(r.i, 1); j.baralho.push(this.nova(nome, "incolor", kit)); this.log(`${j.nome} compra ${nome}.`); }
+    if (r.acao === "artefato") { const lista = r.dep ? loja.dep : loja.artefatos; const nome = lista[r.i]; if (!nome) return; if (!pagar(this.precoDeposito(j, PRECO_ART[M.ARTEFATOS[nome].classe]))) return; lista.splice(r.i, 1); await this.obterArtefato(j, nome); }
+    // Provisão sem espaço livre: a pessoa escolhe qual descartar (Cap. 10) ou volta e desiste da compra
+    if (r.acao === "provisao") { const nome = loja.provisoes[r.i]; if (!nome) return; if (!pagar(this.precoDeposito(j, 2))) return; loja.provisoes.splice(r.i, 1); this.log(`${j.nome} compra a Provisão ${nome}.`); await this.ganharProvisao(j, nome); }
+    if (r.acao === "remover") { if (loja.removeu[r.jog]) return; if (j.creditos < this.precoDeposito(j, 3)) { this.log("Créditos insuficientes."); return; } const x = await this.removerCartaEscolha(j, `${j.nome}: remova 1 carta (${this.precoDeposito(j, 3)} créditos)`); if (x) { j.creditos -= this.precoDeposito(j, 3); loja.removeu[r.jog] = true; } }
+    if (r.acao === "credito") { const outro = s.jogadores[r.para]; if (j.creditos > 0) { j.creditos--; outro.creditos++; } }
   },
 
   /* ---------------- ACHADO ARQUEOLÓGICO ---------------- */
